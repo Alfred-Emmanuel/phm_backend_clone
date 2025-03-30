@@ -1,0 +1,183 @@
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { User } from '../entities/user.entity';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { LoginDto } from '../dto/login.dto';
+import * as bcrypt from 'bcrypt';
+import { TokenService } from '../../../shared/services/token.service';
+import { EmailService } from '../../../shared/services/email.service';
+import { VerificationTokenService } from '../../../shared/services/verification-token.service';
+import { IJwtData } from '../../../shared/interfaces/jwt.interface';
+import { Op, Transaction } from 'sequelize';
+import { UniqueConstraintError } from 'sequelize';
+
+@Injectable()
+export class UserService {
+  constructor(
+    @InjectModel(User)
+    private userModel: typeof User,
+    private tokenService: TokenService,
+    private emailService: EmailService,
+    private verificationTokenService: VerificationTokenService,
+  ) {}
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const transaction = await this.userModel.sequelize!.transaction();
+    let user: User;
+
+    try {
+      const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+      const verificationToken = this.verificationTokenService.generateToken();
+      const verificationExpires =
+        this.verificationTokenService.getExpirationDate();
+
+      user = await this.userModel.create(
+        {
+          ...createUserDto,
+          password: hashedPassword,
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires,
+        },
+        { transaction },
+      );
+
+      // Send verification email
+      await this.emailService.sendVerificationEmail(
+        user.email,
+        verificationToken,
+      );
+
+      // Generate tokens for the new user
+      const jwtData: IJwtData = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      };
+
+      const [accessToken, refreshToken] =
+        await this.tokenService.getTokens(jwtData);
+
+      // Commit the transaction
+      await transaction.commit();
+
+      return {
+        ...user.toJSON(),
+        accessToken,
+        refreshToken,
+      } as any;
+    } catch (error) {
+      // Rollback the transaction for any error
+      await transaction.rollback();
+
+      if (error instanceof UniqueConstraintError) {
+        throw new ConflictException('Email already exists');
+      }
+      if (
+        error instanceof Error &&
+        error.message.includes('Failed to send verification email')
+      ) {
+        throw new InternalServerErrorException(
+          'Failed to send verification email. Please try again later.',
+        );
+      }
+      throw error;
+    }
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.userModel.findOne({
+      where: { email: loginDto.email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException(
+        'Please verify your email before logging in',
+      );
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const jwtData: IJwtData = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
+
+    const [accessToken, refreshToken] =
+      await this.tokenService.getTokens(jwtData);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    };
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    const user = await this.userModel.findOne({
+      where: {
+        emailVerificationToken: token,
+        emailVerificationExpires: {
+          [Op.gt]: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+  }
+
+  async resendVerificationEmail(userId: string): Promise<void> {
+    const user = await this.userModel.findByPk(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    const verificationToken = this.verificationTokenService.generateToken();
+    const verificationExpires =
+      this.verificationTokenService.getExpirationDate();
+
+    user.emailVerificationToken = verificationToken;
+    user.emailVerificationExpires = verificationExpires;
+    await user.save();
+
+    await this.emailService.sendVerificationEmail(
+      user.email,
+      verificationToken,
+    );
+  }
+}
