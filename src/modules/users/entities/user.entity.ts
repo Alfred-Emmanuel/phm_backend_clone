@@ -35,6 +35,20 @@ export class User extends Model {
   declare lastName: string;
 
   @Column({
+    type: DataType.ENUM('admin', 'student', 'instructor'),
+    allowNull: false,
+    // unique: true,
+  })
+  declare role: string;
+
+  @Column({
+    type: DataType.ENUM('pending', 'approved', 'rejected'),
+    allowNull: true,
+    defaultValue: null,
+  })
+  declare instructorStatus: string | null;
+
+  @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
   })

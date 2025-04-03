@@ -4,10 +4,13 @@ import {
   BadRequestException,
   ConflictException,
   InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { CreateStudentDto } from '../dto/create-student.dto';
+import { CreateInstructorDto } from '../dto/create-instructor.dto';
 import { LoginDto } from '../dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { TokenService } from '../../../shared/services/token.service';
@@ -179,5 +182,147 @@ export class UserService {
       user.email,
       verificationToken,
     );
+  }
+
+  async signupStudent(createStudentDto: CreateStudentDto): Promise<User> {
+    const transaction = await this.userModel.sequelize!.transaction();
+    let user: User;
+
+    try {
+      const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
+      const verificationToken = this.verificationTokenService.generateToken();
+      const verificationExpires =
+        this.verificationTokenService.getExpirationDate();
+
+      user = await this.userModel.create(
+        {
+          ...createStudentDto,
+          password: hashedPassword,
+          role: 'student',
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires,
+        },
+        { transaction },
+      );
+
+      await this.emailService.sendVerificationEmail(
+        user.email,
+        verificationToken,
+      );
+      await transaction.commit();
+
+      return user;
+    } catch (error) {
+      await transaction.rollback();
+      if (error instanceof UniqueConstraintError) {
+        throw new ConflictException('Email already exists');
+      }
+      throw error;
+    }
+  }
+
+  async signupInstructor(
+    createInstructorDto: CreateInstructorDto,
+  ): Promise<User> {
+    const transaction = await this.userModel.sequelize!.transaction();
+    let user: User;
+
+    try {
+      const hashedPassword = await bcrypt.hash(
+        createInstructorDto.password,
+        10,
+      );
+      const verificationToken = this.verificationTokenService.generateToken();
+      const verificationExpires =
+        this.verificationTokenService.getExpirationDate();
+
+      user = await this.userModel.create(
+        {
+          ...createInstructorDto,
+          password: hashedPassword,
+          role: 'instructor',
+          instructorStatus: 'pending',
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires,
+        },
+        { transaction },
+      );
+
+      await this.emailService.sendVerificationEmail(
+        user.email,
+        verificationToken,
+      );
+      await transaction.commit();
+
+      return user;
+    } catch (error) {
+      await transaction.rollback();
+      if (error instanceof UniqueConstraintError) {
+        throw new ConflictException('Email already exists');
+      }
+      throw error;
+    }
+  }
+
+  async approveInstructor(
+    instructorId: string,
+    adminId: string,
+  ): Promise<User> {
+    const admin = await this.userModel.findByPk(adminId);
+    if (!admin || admin.role !== 'admin') {
+      throw new ForbiddenException('Only admins can approve instructors');
+    }
+
+    const instructor = await this.userModel.findByPk(instructorId);
+    if (!instructor) {
+      throw new BadRequestException('Instructor not found');
+    }
+
+    if (instructor.role !== 'instructor') {
+      throw new BadRequestException('User is not an instructor');
+    }
+
+    if (instructor.instructorStatus === 'approved') {
+      throw new BadRequestException('Instructor is already approved');
+    }
+
+    instructor.instructorStatus = 'approved';
+    await instructor.save();
+
+    return instructor;
+  }
+
+  async rejectInstructor(instructorId: string, adminId: string): Promise<User> {
+    const admin = await this.userModel.findByPk(adminId);
+    if (!admin || admin.role !== 'admin') {
+      throw new ForbiddenException('Only admins can reject instructors');
+    }
+
+    const instructor = await this.userModel.findByPk(instructorId);
+    if (!instructor) {
+      throw new BadRequestException('Instructor not found');
+    }
+
+    if (instructor.role !== 'instructor') {
+      throw new BadRequestException('User is not an instructor');
+    }
+
+    if (instructor.instructorStatus === 'rejected') {
+      throw new BadRequestException('Instructor is already rejected');
+    }
+
+    instructor.instructorStatus = 'rejected';
+    await instructor.save();
+
+    return instructor;
+  }
+
+  async getPendingInstructors(): Promise<User[]> {
+    return this.userModel.findAll({
+      where: {
+        role: 'instructor',
+        instructorStatus: 'pending',
+      },
+    });
   }
 }
