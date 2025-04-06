@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { CourseEnrollmentService } from '../services/course-enrollment.service';
 import { CreateEnrollmentDto } from '../dto/create-enrollment.dto';
@@ -61,5 +62,13 @@ export class CourseEnrollmentController {
     @Param('courseId') courseId: string,
   ): Promise<CourseEnrollment[]> {
     return this.enrollmentService.findByCourse(courseId);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateDto: Partial<CreateEnrollmentDto>,
+  ) {
+    return this.enrollmentService.update(id, updateDto);
   }
 }

@@ -125,4 +125,13 @@ export class CourseEnrollmentService {
       ],
     });
   }
+
+  async update(
+    id: string,
+    updateDto: Partial<CreateEnrollmentDto>,
+  ): Promise<CourseEnrollment> {
+    const enrollment = await this.findOne(id);
+    await enrollment.update(updateDto);
+    return enrollment;
+  }
 }

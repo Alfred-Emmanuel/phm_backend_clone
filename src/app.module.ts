@@ -5,6 +5,7 @@ import { UserModule } from './modules/users/user.module';
 import { CourseModule } from './modules/courses/course.module';
 import { CourseEnrollmentModule } from './modules/course-enrollments/course-enrollment.module';
 import { LessonModule } from './modules/lessons/lesson.module';
+import { AssignmentModule } from './modules/assignments/assignment.module';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import emailConfig from './config/email.config';
@@ -27,6 +28,7 @@ import appConfig from './config/app.config';
     CourseModule,
     CourseEnrollmentModule,
     LessonModule,
+    AssignmentModule,
   ],
 })
 export class AppModule {}

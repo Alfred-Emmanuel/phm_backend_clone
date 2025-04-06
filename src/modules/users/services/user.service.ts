@@ -325,4 +325,55 @@ export class UserService {
       },
     });
   }
+
+  async findAll(): Promise<User[]> {
+    return this.userModel.findAll();
+  }
+
+  async findOne(id: string): Promise<User> {
+    const user = await this.userModel.findByPk(id);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
+  }
+
+  async update(id: string, updateDto: Partial<CreateUserDto>): Promise<User> {
+    const user = await this.findOne(id);
+
+    if (updateDto.password) {
+      const hashedPassword = await bcrypt.hash(updateDto.password, 10);
+      updateDto = { ...updateDto, password: hashedPassword };
+    }
+
+    await user.update(updateDto);
+    return user;
+  }
+
+  async remove(id: string): Promise<void> {
+    const user = await this.findOne(id);
+    await user.destroy();
+  }
+
+  async findByEmail(email: string): Promise<User> {
+    const user = await this.userModel.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
+  }
+
+  async validateUser(email: string, password: string): Promise<User | null> {
+    const user = await this.userModel.findOne({ where: { email } });
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    return user;
+  }
 }
