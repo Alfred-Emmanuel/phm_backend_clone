@@ -77,7 +77,14 @@ export class AssignmentService {
       }
     }
 
-    await assignment.update(updateAssignmentDto);
+    const updateData = {
+      ...updateAssignmentDto,
+      ...(updateAssignmentDto.dueDate && {
+        dueDate: new Date(updateAssignmentDto.dueDate),
+      }),
+    } as Partial<Assignment>;
+
+    await assignment.update(updateData);
     return assignment;
   }
 

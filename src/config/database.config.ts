@@ -13,6 +13,7 @@ export default registerAs('database', () => ({
   username: config.db.postgresql.user,
   password: config.db.postgresql.password,
   database: config.db.postgresql.database,
+  // url: config.db.postgresql.url,
   models: [
     User,
     Course,

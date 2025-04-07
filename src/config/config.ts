@@ -22,6 +22,7 @@ const config = Object.freeze({
   },
   db: {
     postgresql: {
+      url: (process.env.DATABASE_URL as string) || '',
       user: (process.env.DB_USERNAME as string) || 'postgres',
       password: (process.env.DB_PASSWORD as string) || 'postgres',
       database: (process.env.DB_NAME as string) || 'phm_db',
