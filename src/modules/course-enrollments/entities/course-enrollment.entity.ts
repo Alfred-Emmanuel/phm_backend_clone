@@ -9,8 +9,11 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Course } from '../../courses/entities/course.entity';
 
-@Table
-export class CourseEnrollment extends Model {
+@Table({
+  tableName: 'course_enrollments',
+  timestamps: true,
+})
+export class CourseEnrollment extends Model<CourseEnrollment> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,

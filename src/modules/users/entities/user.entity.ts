@@ -1,22 +1,10 @@
 import { Column, Model, Table, DataType } from 'sequelize-typescript';
 
-interface UserCreationAttributes {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role?: string;
-  instructorStatus?: string | null;
-  emailVerificationToken?: string | null;
-  emailVerificationExpires?: Date | null;
-  isEmailVerified?: boolean;
-}
-
 @Table({
   tableName: 'users',
   timestamps: true,
 })
-export class User extends Model<User, UserCreationAttributes> {
+export class User extends Model<User> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,

@@ -17,7 +17,7 @@ import { TokenService } from '../../../shared/services/token.service';
 import { EmailService } from '../../../shared/services/email.service';
 import { VerificationTokenService } from '../../../shared/services/verification-token.service';
 import { IJwtData } from '../../../shared/interfaces/jwt.interface';
-import { Op, Transaction } from 'sequelize';
+import { Op, Transaction, Optional, CreationAttributes } from 'sequelize';
 import { UniqueConstraintError } from 'sequelize';
 
 @Injectable()
@@ -46,7 +46,7 @@ export class UserService {
           password: hashedPassword,
           emailVerificationToken: verificationToken,
           emailVerificationExpires: verificationExpires,
-        },
+        } as CreationAttributes<User>,
         { transaction },
       );
 
@@ -201,7 +201,7 @@ export class UserService {
           role: 'student',
           emailVerificationToken: verificationToken,
           emailVerificationExpires: verificationExpires,
-        },
+        } as CreationAttributes<User>,
         { transaction },
       );
 
@@ -244,7 +244,7 @@ export class UserService {
           instructorStatus: 'pending',
           emailVerificationToken: verificationToken,
           emailVerificationExpires: verificationExpires,
-        },
+        } as CreationAttributes<User>,
         { transaction },
       );
 

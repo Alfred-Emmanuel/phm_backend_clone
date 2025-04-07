@@ -1,5 +1,10 @@
-import { registerAs } from '@nestjs/config';
 import config from './config';
+import { registerAs } from '@nestjs/config';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Course } from 'src/modules/courses/entities/course.entity';
+import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course-enrollment.entity';
+import { Lesson } from 'src/modules/lessons/entities/lesson.entity';
+import { Assignment } from 'src/modules/assignments/entities/assignment.entity';
 
 export default registerAs('database', () => ({
   dialect: 'postgres',
@@ -8,6 +13,13 @@ export default registerAs('database', () => ({
   username: config.db.postgresql.user,
   password: config.db.postgresql.password,
   database: config.db.postgresql.database,
+  models: [
+    User,
+    Course,
+    CourseEnrollment,
+    Lesson,
+    Assignment,
+  ],
   autoLoadModels: config.db.postgresql.autoLoadModels,
   synchronize: config.db.postgresql.synchronize,
 }));

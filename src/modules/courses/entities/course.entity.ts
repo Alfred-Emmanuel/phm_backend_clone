@@ -8,8 +8,11 @@ import {
 } from 'sequelize-typescript';
 import { User } from '../../users/entities/user.entity';
 
-@Table
-export class Course extends Model {
+@Table({
+  tableName: 'courses',
+  timestamps: true,
+})
+export class Course extends Model<Course> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,
