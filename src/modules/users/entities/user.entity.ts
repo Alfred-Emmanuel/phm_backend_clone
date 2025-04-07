@@ -1,13 +1,40 @@
 import { Column, Model, Table, DataType } from 'sequelize-typescript';
 
-@Table
-export class User extends Model {
+interface UserCreationAttributes {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role?: string;
+  instructorStatus?: string | null;
+  emailVerificationToken?: string | null;
+  emailVerificationExpires?: Date | null;
+  isEmailVerified?: boolean;
+}
+
+@Table({
+  tableName: 'users',
+  timestamps: true,
+})
+export class User extends Model<User, UserCreationAttributes> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,
     primaryKey: true,
   })
   declare id: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  declare firstName: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  declare lastName: string;
 
   @Column({
     type: DataType.STRING,
@@ -23,28 +50,15 @@ export class User extends Model {
   declare password: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.ENUM('student', 'instructor', 'admin'),
     allowNull: false,
-  })
-  declare firstName: string;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
-  declare lastName: string;
-
-  @Column({
-    type: DataType.ENUM('admin', 'student', 'instructor'),
-    allowNull: false,
-    // unique: true,
+    defaultValue: 'student',
   })
   declare role: string;
 
   @Column({
     type: DataType.ENUM('pending', 'approved', 'rejected'),
     allowNull: true,
-    defaultValue: null,
   })
   declare instructorStatus: string | null;
 
@@ -57,28 +71,16 @@ export class User extends Model {
   @Column({
     type: DataType.STRING,
     allowNull: true,
-    defaultValue: null,
   })
   declare emailVerificationToken: string | null;
 
   @Column({
     type: DataType.DATE,
     allowNull: true,
-    defaultValue: null,
   })
   declare emailVerificationExpires: Date | null;
 
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-    defaultValue: DataType.NOW,
-  })
+  // Timestamps
   declare createdAt: Date;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-    defaultValue: DataType.NOW,
-  })
   declare updatedAt: Date;
 }
