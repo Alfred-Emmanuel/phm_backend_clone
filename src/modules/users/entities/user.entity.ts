@@ -37,6 +37,7 @@ export enum Profession {
 }
 
 export const GSM_NETWORKS = Object.values(GsmNetwork);
+export const PROFESSIONS = Object.values(Profession);
 
 @Table({
   tableName: 'users',
@@ -143,7 +144,7 @@ export class User extends Model<User> {
   declare placeOfWork: string;
 
   @Column({
-    type: DataType.ENUM,
+    type: DataType.ENUM(...PROFESSIONS),
     allowNull: false,
   })
   declare professionalCadre: Profession;
