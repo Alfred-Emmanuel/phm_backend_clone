@@ -3,6 +3,8 @@ import { UserController } from './user.controller';
 import { UserService } from '../services/user.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { CreateStudentDto } from '../dto/create-student.dto';
+import { GsmNetwork, Profession } from '../entities/user.entity';
+import { NigerianStates } from '../../../shared/utils/nigeria-states';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -15,6 +17,14 @@ describe('UserController', () => {
     email: 'john@example.com',
     role: 'student',
     instructorStatus: null,
+    gsmNetwork: GsmNetwork.MTN,
+    phoneNumber: '+2348012345678',
+    pcnNumber: 'PCN12345',
+    placeOfWork: 'General Hospital, Lagos',
+    state: NigerianStates.LAGOS,
+    country: 'Nigeria',
+    professionalCadre: Profession.HOSPITAL_PHARMACIST,
+    others: null,
   };
 
   beforeEach(async () => {
@@ -53,6 +63,13 @@ describe('UserController', () => {
         lastName: 'Doe',
         email: 'john@example.com',
         password: 'password123',
+        gsmNetwork: GsmNetwork.MTN,
+        phoneNumber: '+2348012345678',
+        pcnNumber: 'PCN12345',
+        placeOfWork: 'General Hospital, Lagos',
+        state: NigerianStates.LAGOS,
+        country: 'Nigeria',
+        professionalCadre: Profession.HOSPITAL_PHARMACIST,
       };
 
       const result = await controller.signupStudent(createDto);
@@ -84,6 +101,8 @@ describe('UserController', () => {
     it('should update a user', async () => {
       const updateDto = {
         firstName: 'Jane',
+        placeOfWork: 'New Hospital',
+        state: NigerianStates.ABUJA,
       };
 
       const result = await controller.update('1', updateDto);
