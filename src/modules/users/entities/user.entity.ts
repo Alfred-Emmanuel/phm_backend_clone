@@ -185,6 +185,20 @@ export class User extends Model<User> {
         instance.gsmNetwork = instance.gsmNetwork.toLowerCase() as GsmNetwork;
       }
     }
+
+    // Normalize professional cadre (convert to lowercase and match enum)
+    if (instance.professionalCadre && typeof instance.professionalCadre === 'string') {
+      const normalizedCadre = normalizeEnumValue(
+        instance.professionalCadre,
+        Profession,
+      );
+      if (normalizedCadre) {
+        instance.professionalCadre = normalizedCadre;
+      } else {
+        // Default to lowercase if not found in enum (fallback)
+        instance.professionalCadre = instance.professionalCadre.toLowerCase() as Profession;
+      }
+    }
   }
 
   /**

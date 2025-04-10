@@ -66,7 +66,7 @@ module.exports = {
     try {
       // Add GSM Network enum type
       await queryInterface.sequelize.query(
-        `CREATE TYPE "enum_users_gsm_network" AS ENUM (${Object.values(
+        `CREATE TYPE "enum_users_gsmNetwork" AS ENUM (${Object.values(
           GsmNetwork,
         )
           .map((value) => `'${value}'`)
@@ -76,17 +76,9 @@ module.exports = {
 
       // Add Professional Cadre enum type
       await queryInterface.sequelize.query(
-        `CREATE TYPE "enum_users_professional_cadre" AS ENUM (${Object.values(
+        `CREATE TYPE "enum_users_professionalCadre" AS ENUM (${Object.values(
           Profession,
         )
-          .map((value) => `'${value}'`)
-          .join(', ')});`,
-        { transaction },
-      );
-
-      // Add Nigerian States enum type
-      await queryInterface.sequelize.query(
-        `CREATE TYPE "enum_users_state" AS ENUM (${Object.values(NigerianStates)
           .map((value) => `'${value}'`)
           .join(', ')});`,
         { transaction },
@@ -95,7 +87,7 @@ module.exports = {
       // Add new columns
       await queryInterface.addColumn(
         'users',
-        'gsm_network',
+        'gsmNetwork',
         {
           type: Sequelize.ENUM(...Object.values(GsmNetwork)),
           allowNull: false,
@@ -105,7 +97,7 @@ module.exports = {
 
       await queryInterface.addColumn(
         'users',
-        'phone_number',
+        'phoneNumber',
         {
           type: Sequelize.STRING,
           allowNull: false,
@@ -115,7 +107,7 @@ module.exports = {
 
       await queryInterface.addColumn(
         'users',
-        'pcn_number',
+        'pcnNumber',
         {
           type: Sequelize.STRING,
           allowNull: false,
@@ -125,7 +117,7 @@ module.exports = {
 
       await queryInterface.addColumn(
         'users',
-        'place_of_work',
+        'placeOfWork',
         {
           type: Sequelize.TEXT,
           allowNull: false,
@@ -155,7 +147,7 @@ module.exports = {
 
       await queryInterface.addColumn(
         'users',
-        'professional_cadre',
+        'professionalCadre',
         {
           type: Sequelize.ENUM(...Object.values(Profession)),
           allowNull: false,
@@ -185,30 +177,30 @@ module.exports = {
 
     try {
       // Remove columns
-      await queryInterface.removeColumn('users', 'gsm_network', {
+      await queryInterface.removeColumn('users', 'gsmNetwork', {
         transaction,
       });
-      await queryInterface.removeColumn('users', 'phone_number', {
+      await queryInterface.removeColumn('users', 'phoneNumber', {
         transaction,
       });
-      await queryInterface.removeColumn('users', 'pcn_number', { transaction });
-      await queryInterface.removeColumn('users', 'place_of_work', {
+      await queryInterface.removeColumn('users', 'pcnNumber', { transaction });
+      await queryInterface.removeColumn('users', 'placeOfWork', {
         transaction,
       });
       await queryInterface.removeColumn('users', 'state', { transaction });
       await queryInterface.removeColumn('users', 'country', { transaction });
-      await queryInterface.removeColumn('users', 'professional_cadre', {
+      await queryInterface.removeColumn('users', 'professionalCadre', {
         transaction,
       });
       await queryInterface.removeColumn('users', 'others', { transaction });
 
       // Drop enum types
       await queryInterface.sequelize.query(
-        'DROP TYPE IF EXISTS "enum_users_gsm_network";',
+        'DROP TYPE IF EXISTS "enum_users_gsmNetwork";',
         { transaction },
       );
       await queryInterface.sequelize.query(
-        'DROP TYPE IF EXISTS "enum_users_professional_cadre";',
+        'DROP TYPE IF EXISTS "enum_users_professionalCadre";',
         { transaction },
       );
       await queryInterface.sequelize.query(
