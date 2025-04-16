@@ -5,6 +5,10 @@ import { Course } from 'src/modules/courses/entities/course.entity';
 import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course-enrollment.entity';
 import { Lesson } from 'src/modules/lessons/entities/lesson.entity';
 import { Assignment } from 'src/modules/assignments/entities/assignment.entity';
+import { Admin } from 'src/modules/admin/entities/admin.entity';
+import { AdminActionLog } from 'src/modules/admin/entities/admin_action_log.entity';
+import { Category } from 'src/modules/categories/entities/category.entity';
+import { CourseCategory } from 'src/modules/categories/entities/course-category.entity';
 
 export default registerAs('database', () => ({
   dialect: 'postgres',
@@ -20,6 +24,10 @@ export default registerAs('database', () => ({
     CourseEnrollment,
     Lesson,
     Assignment,
+    Admin,
+    AdminActionLog,
+    Category,
+    CourseCategory
   ],
   autoLoadModels: config.db.postgresql.autoLoadModels,
   synchronize: config.db.postgresql.synchronize,

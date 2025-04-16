@@ -1,0 +1,67 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Outlines key user, instructor, and admin interaction flows for the LMS platform, reflecting current state and desired admin/category additions. Uses existing endpoint names.
+alwaysApply: true
+---
+
+# Application Flows
+
+## 1. Overview
+Describes interaction flows for Student, Instructor, Admin roles. Uses existing endpoint names like `/users/login`. Highlights where admin capabilities exist and where they need consolidation/standardization.
+
+## 2. Existing User & Instructor Flows (Confirmed & To Remain Functional)
+- **Registration:** `POST /users/signup/student`, `POST /users/signup/instructor`.
+- **Login:** `POST /users/login` -> Returns Access Token (body) & Refresh Token (HttpOnly Cookie).
+- **Auth:** Email Verification (`GET /users/verify-email`), Password Reset (`POST /users/resend-verification`, `POST /users/reset-password`).
+- **User Profile:** `GET /users/me`, `PATCH /users/me`.
+- **Course Management (Instructor):** `POST /courses`, `GET /courses` (all/filtered), `GET /courses/{id}`, `PATCH /courses/{id}`, `DELETE /courses/{id}` (Requires ownership). `GET /courses/instructor/{id}`.
+- **Lesson Management (Instructor):** `POST /lessons`, `GET /lessons`, `GET /lessons/{id}`, `PATCH /lessons/{id}`, `DELETE /lessons/{id}`, `GET /lessons/course/{courseId}`, `POST /lessons/course/{courseId}/reorder` (Requires ownership/instructor role for modification). Admin can also perform modifications via these routes currently.
+- **Assignment Management (Instructor):** `POST /assignments`, `GET /assignments`, `GET /assignments/{id}`, `PATCH /assignments/{id}`, `DELETE /assignments/{id}`, `GET /assignments/course/{courseId}` (Requires ownership/instructor role for modification). Admin can also perform modifications via these routes currently.
+- **Enrollment (Student):** `POST /enrollments`, `GET /enrollments/user/{userId}`, `DELETE /enrollments/{id}` (Requires ownership or admin).
+
+## 3. Refactored/NEW Admin Flows (Standardized Implementation)
+- **Admin Login:** Use `POST /users/login`. Backend verifies `user.role === 'admin'`.
+- **Admin Dashboard Access:** Conceptual frontend dashboard using `/admin/*` API endpoints.
+- **Instructor Approval/Rejection:**
+    - `GET /admin/instructors/pending` (**New/Moved Endpoint**).
+    - `POST /admin/instructors/{id}/approve` (**New/Moved Endpoint**). *Logs action.*
+    - `POST /admin/instructors/{id}/reject` (**New/Moved Endpoint**). *Logs action.*
+    - **Deprecate/Remove:** Original `/users/instructors/...` approval/rejection routes if they exist.
+- **User Management (Admin):**
+    - `GET /admin/users` -> View all users with filters.
+    - `GET /admin/users/{id}` -> View specific user details.
+    - `PATCH /admin/users/{id}/status` -> Suspend/Reactivate user. *Logs action.*
+    - `DELETE /admin/users/{id}` -> Admin deletes a user. **Secure/replace** original `DELETE /users/{id}` route. *Logs action.*
+    - `PATCH /admin/users/{id}/role` -> Grant/Revoke Admin Role (**Requires SuperAdminGuard**). Manages `user.role` and `admins` table record. *Logs action.*
+- **Course Management (Admin):**
+    - `GET /admin/courses` (or use `GET /courses` with admin privileges) -> View ALL courses.
+    - `DELETE /admin/courses/{id}` (or use `DELETE /courses/{id}` with admin privileges) -> Delete ANY course. *Logs action.*
+- **Lesson Management (Admin):**
+    - `DELETE /admin/lessons/{id}` (**New Endpoint**) -> Delete ANY lesson. *Logs action.* (Or add admin check to existing `DELETE /lessons/{id}`).
+    - Similar oversight endpoints for viewing/updating any lesson if needed.
+- **Assignment Management (Admin):**
+    - `DELETE /admin/assignments/{id}` (**New Endpoint**) -> Delete ANY assignment. *Logs action.* (Or add admin check to existing `DELETE /assignments/{id}`).
+    - Similar oversight endpoints for viewing/updating any assignment if needed.
+- **Enrollment Management (Admin):**
+    - `GET /admin/enrollments` (or use existing `GET /enrollments` protected by AdminGuard) -> View ALL enrollments.
+    - `DELETE /admin/enrollments/{id}` (or use existing `DELETE /enrollments/{id}` protected by AdminGuard) -> Remove ANY enrollment. *Logs action.*
+- **Category Management (Admin):**
+    - `POST /admin/categories` -> Create category. *Logs action.*
+    - `GET /admin/categories`, `GET /admin/categories/{id}` -> View categories.
+    - `PATCH /admin/categories/{id}` -> Update category. *Logs action.*
+    - `DELETE /admin/categories/{id}` -> Delete category. *Logs action.*
+- **Admin Action Log Review:**
+    - `GET /admin/action-logs` -> View logs.
+
+## 4. NEW Category Interaction Flows
+- **Course Creation/Update (Instructor/Admin):** `POST /courses`, `PATCH /courses/{id}` payloads accept `categoryIds: string[]`. Service links via `course_categories`.
+- **Course Filtering (Student/Public):** `GET /courses` accepts query parameters `?category=slug-or-id` and `?type=paid|free|other`.
+
+## 5. General API Interaction
+- Protected routes require JWT Access Token. Use `AdminGuard`, `SuperAdminGuard`, `RolesGuard` as appropriate. Check for resource ownership within services where applicable (e.g., instructor modifying *their own* course).
+- Refresh mechanism uses HttpOnly Refresh Token cookie.
+- Standard HTTP status codes and clear error messages.

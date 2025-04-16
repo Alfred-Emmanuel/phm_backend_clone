@@ -204,25 +204,6 @@ export class UserController {
     return this.userService.update(id, updateDto);
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Delete user',
-    description:
-      'Requires JWT authentication and admin role. Send with Bearer token in Authorization header.',
-  })
-  @ApiResponse({ status: 200, description: 'User deleted' })
-  @ApiResponse({ status: 400, description: 'User not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  async remove(@Param('id') id: string): Promise<void> {
-    await this.userService.remove(id);
-  }
-
   @Get('email/:email')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -238,55 +219,5 @@ export class UserController {
   })
   async findByEmail(@Param('email') email: string): Promise<User> {
     return this.userService.findByEmail(email);
-  }
-
-  @Post('instructors/:id/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Approve instructor',
-    description:
-      'Requires JWT authentication and admin role. Send with Bearer token in Authorization header.',
-  })
-  @ApiResponse({ status: 200, description: 'Instructor approved', type: User })
-  @ApiResponse({
-    status: 400,
-    description: 'Instructor not found or already approved',
-  })
-  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  async approveInstructor(
-    @Param('id') instructorId: string,
-    @Body('adminId') adminId: string,
-  ) {
-    return this.userService.approveInstructor(instructorId, adminId);
-  }
-
-  @Post('instructors/:id/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Reject instructor',
-    description:
-      'Requires JWT authentication and admin role. Send with Bearer token in Authorization header.',
-  })
-  @ApiResponse({ status: 200, description: 'Instructor rejected', type: User })
-  @ApiResponse({
-    status: 400,
-    description: 'Instructor not found or already rejected',
-  })
-  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  async rejectInstructor(
-    @Param('id') instructorId: string,
-    @Body('adminId') adminId: string,
-  ) {
-    return this.userService.rejectInstructor(instructorId, adminId);
   }
 }

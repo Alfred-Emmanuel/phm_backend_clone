@@ -1,0 +1,108 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Defines the target backend structure, database schema, and relationships for the LMS, incorporating the existing setup (Users, Courses, Lessons, Assignments, Enrollments) and adding standard Admin management and Course Categories.
+alwaysApply: true
+---
+
+# Backend Structure & Database Schema Rules
+
+## 1. Overview
+This document outlines the target backend structure and database schema for the Learning Management System (LMS). It reflects the **existing** User, Course, Lesson, Assignment, and CourseEnrollment structure and details the **integration** of a standardized Admin management system and a new Course Category system. Adhere to NestJS best practices and use Sequelize with TypeScript. Use **`snake_case`** for database identifiers (tables, columns). Use **`camelCase`** for model properties and code variables. Model files are named `*.entity.ts`.
+
+## 2. Existing Modules & Entities (Confirmed)
+The system currently includes:
+- **`users` Module (`user.entity.ts`):**
+    - Manages registration (student, instructor, **admin**), login (`/users/login`), profile, email verification, password reset.
+    - Has `role` ENUM('student', 'instructor', 'admin').
+    - Has `instructorStatus` ENUM('pending', 'approved', 'rejected').
+    - Contains specific admin logic (approve/reject instructor) in `UsersService`.
+    - **Note:** Multiple admins exist; plan for a 'super admin' distinction.
+- **`courses` Module (`course.entity.ts`):** Manages courses. Linked via `instructorId` (FK to `users`).
+- **`lessons` Module (`lesson.entity.ts`):** Manages lessons. Linked via `courseId` (FK to `courses`). Includes `position` for ordering. `LessonController` has endpoints allowing admin actions (create, update, delete, reorder).
+- **`assignments` Module (`assignment.entity.ts`):** Manages assignments. Linked via `courseId` (FK to `courses`). `AssignmentController` has endpoints allowing admin actions (create, update, delete).
+- **`course-enrollments` Module (`course-enrollment.entity.ts`):** Manages student enrollments. Links `userId` (FK to `users`) and `courseId` (FK to `courses`). `CourseEnrollmentController` has endpoints requiring admin (findAll, remove).
+
+## 3. Refactored/NEW: Admin Implementation (Industry Standard)
+Standardize Admin management, migrating existing logic and adding structure:
+
+- **`users` Entity (`user.entity.ts`):**
+    - The `role` column already includes `'admin'`. This is correct.
+    - **Add:** `granted_admin_by` (UUID, Foreign Key referencing `users.id`, NULLABLE, ON DELETE SET NULL) - Tracks who granted admin rights.
+    - **Add (Optional but Recommended):** `status` (ENUM('active', 'suspended', 'pending_email_verification'), NOT NULL, DEFAULT 'pending_email_verification' or 'active') - For admin user status management. Update existing `isEmailVerified` logic if needed.
+- **NEW `admins` Table & Entity (`admin.entity.ts`):**
+    - Create new table `admins` and entity `Admin`.
+    - **Purpose:** Stores metadata for users with the 'admin' role.
+    - **Schema (`admins` table):**
+        - `id` (UUID, Primary Key, default UUIDV4)
+        - `user_id` (UUID, Foreign Key referencing `users.id`, UNIQUE, NOT NULL, ON DELETE CASCADE)
+        - `job_title` (VARCHAR, NULLABLE)
+        - `permissions` (JSONB, NULLABLE - For future fine-grained permissions)
+        - `is_super_admin` (BOOLEAN, NOT NULL, DEFAULT false) - Distinguishes super admin(s).
+        - `created_at` (TIMESTAMP WITH TIME ZONE, NOT NULL, DEFAULT CURRENT_TIMESTAMP)
+        - `updated_at` (TIMESTAMP WITH TIME ZONE, NOT NULL, DEFAULT CURRENT_TIMESTAMP)
+    - **Relationships:** `User` hasOne `Admin`; `Admin` belongsTo `User`.
+- **NEW `admin_action_logs` Table & Entity (`admin_action_log.entity.ts`):**
+    - Create table `admin_action_logs` and entity `AdminActionLog`.
+    *   **Purpose:** Tracks significant admin actions.
+    *   **Schema (`admin_action_logs` table):**
+        - `id` (UUID, Primary Key, default UUIDV4)
+        - `admin_user_id` (UUID, Foreign Key referencing `users.id`, NOT NULL, ON DELETE SET NULL)
+        - `action_type` (VARCHAR, NOT NULL - e.g., 'approve_instructor', 'delete_user', 'delete_course', 'delete_lesson', 'delete_assignment', 'delete_enrollment', 'create_category', 'grant_admin_role')
+        - `target_type` (VARCHAR, NULLABLE - e.g., 'user', 'course', 'lesson', 'assignment', 'enrollment', 'category')
+        - `target_id` (UUID, NULLABLE)
+        - `details` (JSONB or TEXT, NULLABLE)
+        - `created_at` (TIMESTAMP WITH TIME ZONE, NOT NULL, DEFAULT CURRENT_TIMESTAMP)
+    *   **Relationship:** `User` (Admin) hasMany `AdminActionLog`.
+- **NEW `admin` Module:**
+    - Create dedicated NestJS module `admin`.
+    - **Responsibilities:**
+        - House `AdminController`, `AdminService`.
+        - Handle API endpoints prefixed with `/admin/*`.
+        - **Migrate Logic:** Centralize admin-specific logic here from:
+            - `UsersService` (approve/reject instructor, user deletion/status update).
+            - `CourseEnrollmentService` (listing all, removing enrollments).
+            - `CoursesService` (deleting *any* course).
+            - `LessonsService` (deleting/updating *any* lesson).
+            - `AssignmentsService` (deleting/updating *any* assignment).
+- **RBAC (Role-Based Access Control):**
+    - Implement `AdminGuard` checking `user.role === 'admin'`.
+    - Implement `SuperAdminGuard` checking `user.admin.isSuperAdmin` (requires eager/lazy loading the `Admin` relation).
+    - Apply guards strictly to `/admin/*` endpoints.
+    - Review existing `RolesGuard` usage on non-admin endpoints (`POST /lessons`, etc.) - ensure instructors cannot affect courses/lessons they don't own unless intended. Add ownership checks within services where appropriate.
+
+## 4. NEW: Categories Implementation
+Implement course categories:
+
+- **NEW `categories` Table & Entity (`category.entity.ts`):**
+    - Create table `categories` and entity `Category`.
+    - **Schema (`categories` table):**
+        - `id` (UUID, Primary Key, default UUIDV4)
+        - `name` (VARCHAR UNIQUE, NOT NULL)
+        - `type` (ENUM('paid', 'free', 'other') NOT NULL)
+        - `description` (TEXT, NULLABLE)
+        - `slug` (VARCHAR UNIQUE, NOT NULL)
+        - `created_at` (TIMESTAMP WITH TIME ZONE, NOT NULL, DEFAULT CURRENT_TIMESTAMP)
+        - `updated_at` (TIMESTAMP WITH TIME ZONE, NOT NULL, DEFAULT CURRENT_TIMESTAMP)
+- **NEW `course_categories` Join Table & Entity (`course_category.entity.ts` - optional):**
+    - Create join table `course_categories`.
+    - **Schema (`course_categories` table):**
+        - `course_id` (UUID, Foreign Key referencing `courses.id`, NOT NULL, ON DELETE CASCADE)
+        *   `category_id` (UUID, Foreign Key referencing `categories.id`, NOT NULL, ON DELETE CASCADE)
+        *   **Primary Key:** Composite (`course_id`, `category_id`)
+- **NEW `categories` Module:**
+    - Create module `categories`.
+    - **Responsibilities:** `CategoriesController`, `CategoriesService`. CRUD operations protected by `AdminGuard`.
+- **Update `courses` Module:**
+    - Add Many-to-Many relationships in `Course` and `Category` entities.
+    - Modify `CoursesService` & DTOs for category association during create/update.
+    - Update `GET /courses` for category/type filtering and optionally including categories in response.
+
+## 5. General Structure & Conventions
+- Maintain modular structure: `src/modules/`.
+- Entities: `*.entity.ts`. Shared components: `src/shared/`.
+- Use DTOs. Use Sequelize with `sequelize-typescript`. Use `sequelize-cli` for migrations.
+- DB identifiers: `snake_case`. Code identifiers: `camelCase`.

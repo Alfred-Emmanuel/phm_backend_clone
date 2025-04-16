@@ -1,0 +1,68 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: High-level plan for integrating standard Admin features and Categories into the existing LMS backend, focusing on refactoring current admin logic.
+alwaysApply: true
+---
+
+# Implementation Plan: Standardized Admin & Categories
+
+## 1. Overview
+Plan for integrating standardized Admin functionality (dedicated module, logging, super admin) and Course Categories, refactoring existing admin logic from `Users`, `Courses`, `Lessons`, `Assignments`, `CourseEnrollments` modules.
+
+## 2. Phase 1: Database Schema Updates & Core Setup
+- **Task:** **Verify/Update `users` table:** Add `granted_admin_by` (UUID nullable FK), add `status` ENUM if needed. Confirm 'admin' in `role`.
+- **Task:** Create `admins` table schema (incl. `is_super_admin`).
+- **Task:** Create `admin_action_logs` table schema.
+- **Task:** Create `categories` table schema (incl. `type` ENUM).
+- **Task:** Create `course_categories` join table schema.
+- **Task:** Generate/Run DB migrations (`sequelize-cli`).
+- **Task:** Create/Update Entities (`admin.entity.ts`, `admin_action_log.entity.ts`, `category.entity.ts`, update `user.entity.ts`, `course.entity.ts`). Define relationships.
+- **Task:** Create `AdminModule`, `CategoriesModule`. Import into `AppModule`.
+- **Task:** Create `AdminService`, `CategoriesService` placeholders.
+- **Task:** Implement `AdminGuard`, `SuperAdminGuard`.
+- **Milestone:** DB schema updated, migrations run, new modules/entities/guards exist.
+
+## 3. Phase 2: Migrate Existing Admin Functions to `AdminModule`
+- **Task:** Identify admin logic in `UsersService`: `approveInstructor`, `rejectInstructor`, user deletion.
+- **Task:** Identify admin logic in `CourseEnrollmentService`: `findAll`, `remove`.
+- **Task:** Identify admin privileges in `CoursesController`, `LessonsController`, `AssignmentsController` (e.g., delete/update any resource vs. owned resource).
+- **Task:** Move identified admin logic into `AdminService`.
+- **Task:** Create corresponding endpoints in `AdminController` (e.g., `/admin/instructors/{id}/approve`, `/admin/users/{id}`, `/admin/enrollments`, `/admin/enrollments/{id}`, `/admin/courses/{id}`, `/admin/lessons/{id}`, `/admin/assignments/{id}`).
+- **Task:** Apply `AdminGuard` to all new admin endpoints.
+- **Task:** **Refactor/Secure Original Endpoints:**
+    - Remove admin-specific methods from `UsersService` etc. or add strict ownership checks if non-admins retain some capability.
+    - Apply strict ownership checks or `AdminGuard` to existing modification/deletion endpoints in `Courses`, `Lessons`, `Assignments` controllers to prevent non-admins/non-owners from acting improperly.
+    - Secure or remove original instructor approval/rejection routes.
+- **Task:** Implement basic action logging in `AdminService` for these migrated functions using `admin_action_logs`.
+- **Milestone:** Existing admin functions consolidated in `AdminModule`, protected, logged. Original endpoints secured.
+
+## 4. Phase 3: Implement Core Category Functionality
+- **Task:** Implement `CategoriesService` CRUD methods.
+- **Task:** Implement `CategoriesController` CRUD endpoints (protected by `AdminGuard`). Add action logging.
+- **Task:** Update `CoursesService` create/update/DTOs for `categoryIds`. Implement association logic.
+- **Task:** Update `CoursesService` `findAll`/DTOs for category/type filtering. Update `GET /courses`.
+- **Milestone:** Category management by admins. Course association & filtering functional.
+
+## 5. Phase 4: Implement New Admin Functionalities
+- **Task:** Implement remaining Admin endpoints/service logic (listing all entities, managing user status).
+- **Task:** Implement `PATCH /admin/users/{id}/role` (protected by `SuperAdminGuard`). Ensure `user.role` update and `admins` table record creation/deletion logic is correct. Log action.
+- **Task:** Ensure all new state-changing admin service methods log to `admin_action_logs`.
+- **Task:** Implement `GET /admin/action-logs` endpoint/service.
+- **Milestone:** All defined Admin functions implemented & logged. Role management functional.
+
+## 6. Phase 5: Testing & Refinement
+- **Task:** Write unit/integration/E2E tests for `AdminModule`, `CategoriesModule`, and refactored logic.
+- **Task:** Test RBAC guards (admin, super admin, instructor, student) on relevant endpoints. Test ownership checks.
+- **Task:** Test category features and admin action logging.
+- **Task:** Manual API testing. Refactor. Update API documentation.
+- **Milestone:** Features tested, integrated, documented.
+
+## 7. Considerations
+- **Super Admin Creation:** Define strategy (manual DB, seed).
+- **Data Migration:** Update roles/statuses if needed.
+- **Performance:** Add/Verify DB indexes.
+- **Security:** Thoroughly test guards and ownership logic.

@@ -3,6 +3,7 @@ export interface IJwtData {
   email: string;
   firstName?: string;
   lastName?: string;
+  role?: string;
 }
 
 export interface ITokenDetails {

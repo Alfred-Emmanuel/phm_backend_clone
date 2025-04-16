@@ -5,17 +5,14 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
-  BelongsToMany,
 } from 'sequelize-typescript';
 import { User } from '../../users/entities/user.entity';
-import { Category } from '../../categories/entities/category.entity';
-import { CourseCategory } from '../../categories/entities/course-category.entity';
 
 @Table({
-  tableName: 'courses',
+  tableName: 'admin_action_logs',
   timestamps: true,
 })
-export class Course extends Model<Course> {
+export class AdminActionLog extends Model<AdminActionLog> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,
@@ -23,30 +20,39 @@ export class Course extends Model<Course> {
   })
   declare id: string;
 
+  @ForeignKey(() => User)
+  @Column({
+    type: DataType.UUID,
+    allowNull: false,
+  })
+  declare adminUserId: string;
+
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  declare title: string;
+  declare actionType: string;
 
   @Column({
-    type: DataType.TEXT,
+    type: DataType.STRING,
     allowNull: true,
   })
-  declare description: string;
+  declare targetType: string;
 
-  @ForeignKey(() => User)
   @Column({
     type: DataType.UUID,
     allowNull: true,
   })
-  declare instructorId: string;
+  declare targetId: string;
 
-  @BelongsTo(() => User, 'instructorId')
-  declare instructor: User;
+  @Column({
+    type: DataType.JSONB,
+    allowNull: true,
+  })
+  declare details: object;
 
-  @BelongsToMany(() => Category, () => CourseCategory)
-  declare categories: Category[];
+  @BelongsTo(() => User, 'adminUserId')
+  declare adminUser: User;
 
   @Column({
     type: DataType.DATE,
@@ -54,4 +60,4 @@ export class Course extends Model<Course> {
     defaultValue: DataType.NOW,
   })
   declare createdAt: Date;
-}
+} 

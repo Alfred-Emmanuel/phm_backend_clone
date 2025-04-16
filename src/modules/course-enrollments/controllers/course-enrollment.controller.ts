@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  Delete,
   UseGuards,
   Patch,
 } from '@nestjs/common';
@@ -28,24 +27,10 @@ export class CourseEnrollmentController {
     return this.enrollmentService.create(createEnrollmentDto);
   }
 
-  @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  async findAll(): Promise<CourseEnrollment[]> {
-    return this.enrollmentService.findAll();
-  }
-
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string): Promise<CourseEnrollment> {
     return this.enrollmentService.findOne(id);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  async remove(@Param('id') id: string): Promise<void> {
-    return this.enrollmentService.remove(id);
   }
 
   @Get('user/:userId')

@@ -1,23 +1,24 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateCourseDto {
+export class UpdateCourseDto {
   @ApiProperty({
     description: 'The title of the course',
     example: 'Introduction to Pharmacy Management',
+    required: false,
   })
   @IsString()
-  @IsNotEmpty()
-  title: string;
+  @IsOptional()
+  title?: string;
 
   @ApiProperty({
     description: 'A detailed description of the course',
-    example:
-      'A comprehensive course covering the basics of pharmacy management systems',
+    example: 'A comprehensive course covering the basics of pharmacy management systems',
+    required: false,
   })
   @IsString()
-  @IsNotEmpty()
-  description: string;
+  @IsOptional()
+  description?: string;
 
   @ApiProperty({
     description: 'Array of category IDs to associate with the course',
@@ -29,4 +30,4 @@ export class CreateCourseDto {
   @IsUUID('4', { each: true })
   @IsOptional()
   categoryIds?: string[];
-}
+} 

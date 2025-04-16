@@ -7,6 +7,8 @@ import {
   AllowNull,
   BeforeCreate,
   BeforeUpdate,
+  HasOne,
+  HasMany,
 } from 'sequelize-typescript';
 import {
   NigerianStates,
@@ -15,6 +17,8 @@ import {
 import { normalizeNigerianState } from '../../../shared/utils/nigeria-states-helpers';
 import { normalizeEnumValue } from '../../../shared/utils/case-normalizer';
 import { Col } from 'sequelize/types/utils';
+import { Admin } from '../../admin/entities/admin.entity';
+import { AdminActionLog } from '../../admin/entities/admin_action_log.entity';
 
 // Create a GSM network enum for better type safety
 export enum GsmNetwork {
@@ -154,6 +158,20 @@ export class User extends Model<User> {
     allowNull: true,
   })
   declare others: string;
+
+  @Column({
+    type: DataType.ENUM('active', 'suspended', 'pending_email_verification'),
+    allowNull: false,
+    defaultValue: 'pending_email_verification',
+  })
+  declare status: string;
+
+  // New relationships
+  @HasOne(() => Admin)
+  declare admin: Admin;
+
+  @HasMany(() => AdminActionLog, 'adminUserId')
+  declare adminActionLogs: AdminActionLog[];
 
   // Timestamps
   declare createdAt: Date;

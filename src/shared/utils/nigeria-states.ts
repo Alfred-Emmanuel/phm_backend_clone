@@ -1,5 +1,6 @@
 export enum NigerianStates {
   ABIA = 'Abia',
+  ABUJA = 'Abuja',
   ADAMAWA = 'Adamawa',
   AKWA_IBOM = 'Akwa Ibom',
   ANAMBRA = 'Anambra',
