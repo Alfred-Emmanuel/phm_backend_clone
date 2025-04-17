@@ -92,8 +92,8 @@ export class CourseService {
         );
       }
 
-      // Return the course with its categories
-      return this.findOne(course.id);
+      // Return the created course directly
+      return course;
     });
 
     return result;

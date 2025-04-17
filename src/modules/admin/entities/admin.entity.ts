@@ -25,12 +25,14 @@ export class Admin extends Model<Admin> {
     type: DataType.UUID,
     allowNull: false,
     unique: true,
+    field: 'user_id',
   })
   declare userId: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: true,
+    field: 'job_title',
   })
   declare jobTitle: string;
 
@@ -44,6 +46,7 @@ export class Admin extends Model<Admin> {
     type: DataType.BOOLEAN,
     allowNull: false,
     defaultValue: false,
+    field: 'is_super_admin',
   })
   declare isSuperAdmin: boolean;
 
@@ -54,6 +57,7 @@ export class Admin extends Model<Admin> {
     type: DataType.DATE,
     allowNull: false,
     defaultValue: DataType.NOW,
+    field: 'created_at',
   })
   declare createdAt: Date;
 
@@ -61,6 +65,7 @@ export class Admin extends Model<Admin> {
     type: DataType.DATE,
     allowNull: false,
     defaultValue: DataType.NOW,
+    field: 'updated_at',
   })
   declare updatedAt: Date;
 } 

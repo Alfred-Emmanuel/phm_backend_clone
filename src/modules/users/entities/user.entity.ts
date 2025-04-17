@@ -58,12 +58,14 @@ export class User extends Model<User> {
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    field: 'first_name',
   })
   declare firstName: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    field: 'last_name',
   })
   declare lastName: string;
 
@@ -90,36 +92,42 @@ export class User extends Model<User> {
   @Column({
     type: DataType.ENUM('pending', 'approved', 'rejected'),
     allowNull: true,
+    field: 'instructor_status',
   })
   declare instructorStatus: string | null;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
+    field: 'is_email_verified',
   })
   declare isEmailVerified: boolean;
 
   @Column({
     type: DataType.STRING,
     allowNull: true,
+    field: 'email_verification_token',
   })
   declare emailVerificationToken: string | null;
 
   @Column({
     type: DataType.DATE,
     allowNull: true,
+    field: 'email_verification_expires',
   })
   declare emailVerificationExpires: Date | null;
 
   @Column({
     type: DataType.ENUM(...GSM_NETWORKS),
     allowNull: false,
+    field: 'gsm_network',
   })
   declare gsmNetwork: GsmNetwork;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    field: 'phone_number',
   })
   declare phoneNumber: string;
 
@@ -132,6 +140,7 @@ export class User extends Model<User> {
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    field: 'pcn_number',
   })
   declare pcnNumber: string;
 
@@ -144,12 +153,14 @@ export class User extends Model<User> {
   @Column({
     type: DataType.TEXT,
     allowNull: false,
+    field: 'place_of_work',
   })
   declare placeOfWork: string;
 
   @Column({
     type: DataType.ENUM(...PROFESSIONS),
     allowNull: false,
+    field: 'professional_cadre',
   })
   declare professionalCadre: Profession;
 
@@ -170,11 +181,14 @@ export class User extends Model<User> {
   @HasOne(() => Admin)
   declare admin: Admin;
 
-  @HasMany(() => AdminActionLog, 'adminUserId')
+  @HasMany(() => AdminActionLog, 'admin_user_id')
   declare adminActionLogs: AdminActionLog[];
 
   // Timestamps
+  @Column({ field: 'created_at' })
   declare createdAt: Date;
+  
+  @Column({ field: 'updated_at' })
   declare updatedAt: Date;
 
   /**

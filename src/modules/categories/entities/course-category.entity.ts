@@ -18,6 +18,7 @@ export class CourseCategory extends Model<CourseCategory> {
     type: DataType.UUID,
     allowNull: false,
     primaryKey: true,
+    field: "course_id"
   })
   declare courseId: string;
 
@@ -26,6 +27,7 @@ export class CourseCategory extends Model<CourseCategory> {
     type: DataType.UUID,
     allowNull: false,
     primaryKey: true,
+    field: "category_id"
   })
   declare categoryId: string;
 } 

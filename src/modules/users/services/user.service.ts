@@ -332,7 +332,15 @@ export class UserService {
     return this.userModel.findAll();
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string, requestingUserId?: string, requestingUserRole?: string): Promise<User> {
+    // If requesting user is provided, check if they're an admin or requesting their own ID
+    if (requestingUserId && requestingUserRole !== 'admin') {
+      // If not admin, only allow looking up their own ID
+      if (requestingUserId !== id) {
+        throw new ForbiddenException('You can only look up your own details');
+      }
+    }
+
     const user = await this.userModel.findByPk(id);
     if (!user) {
       throw new BadRequestException('User not found');
@@ -357,7 +365,19 @@ export class UserService {
     await user.destroy();
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findByEmail(email: string, requestingUserId?: string, requestingUserRole?: string): Promise<User> {
+    // If requesting user is provided, check if they're an admin or requesting their own email
+    if (requestingUserId && requestingUserRole !== 'admin') {
+      const requestingUser = await this.userModel.findByPk(requestingUserId);
+      if (!requestingUser) {
+        throw new BadRequestException('Requesting user not found');
+      }
+      // If not admin, only allow looking up their own email
+      if (requestingUser.email !== email) {
+        throw new ForbiddenException('You can only look up your own details');
+      }
+    }
+
     const user = await this.userModel.findOne({ where: { email } });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -376,6 +396,25 @@ export class UserService {
       return null;
     }
 
+    return user;
+  }
+
+  async getCurrentUser(userId: string): Promise<User> {
+    console.log('Looking up user with ID:', userId);
+    
+    const user = await this.userModel.findByPk(userId, {
+      attributes: {
+        exclude: ['password', 'emailVerificationToken', 'emailVerificationExpires'],
+      },
+    });
+    
+    console.log('Found user:', user ? 'yes' : 'no');
+    
+    if (!user) {
+      console.log('User not found in database. ID:', userId);
+      throw new BadRequestException('User not found');
+    }
+    
     return user;
   }
 }

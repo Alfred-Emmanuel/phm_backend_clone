@@ -8,6 +8,7 @@ import {
   Param,
   Put,
   Delete,
+  Request,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -122,6 +123,20 @@ export class UserController {
     return { message: 'Verification email sent successfully' };
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get authenticated user details',
+    description:
+      'Returns the details of the currently authenticated user. Requires JWT authentication.',
+  })
+  @ApiResponse({ status: 200, description: 'User details retrieved successfully', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  async getCurrentUser(@Request() req: any): Promise<User> {
+    return this.userService.getCurrentUser(req.user.userId);
+  }
+
   @Get('instructors/pending')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -167,20 +182,29 @@ export class UserController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get user by ID',
     description:
-      'Requires JWT authentication. Send with Bearer token in Authorization header.',
+      'Requires JWT authentication and admin role. Only admins can look up user details.',
   })
   @ApiResponse({ status: 200, description: 'User found', type: User })
   @ApiResponse({ status: 400, description: 'User not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async findOne(@Param('id') id: string): Promise<User> {
-    return this.userService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @Request() req: any,
+  ): Promise<User> {
+    return this.userService.findOne(
+      id,
+      req.user.id,
+      req.user.role,
+    );
   }
 
   @Put(':id')
@@ -205,19 +229,28 @@ export class UserController {
   }
 
   @Get('email/:email')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get user by email',
     description:
-      'Requires JWT authentication. Send with Bearer token in Authorization header.',
+      'Requires JWT authentication and admin role. Only admins can look up user details.',
   })
   @ApiResponse({ status: 200, description: 'User found', type: User })
   @ApiResponse({ status: 400, description: 'User not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async findByEmail(@Param('email') email: string): Promise<User> {
-    return this.userService.findByEmail(email);
+  async findByEmail(
+    @Param('email') email: string,
+    @Request() req: any,
+  ): Promise<User> {
+    return this.userService.findByEmail(
+      email,
+      req.user.id,
+      req.user.role,
+    );
   }
 }

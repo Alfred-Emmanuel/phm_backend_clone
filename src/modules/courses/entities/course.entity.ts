@@ -39,19 +39,33 @@ export class Course extends Model<Course> {
   @Column({
     type: DataType.UUID,
     allowNull: true,
+    field: 'instructor_id'
   })
   declare instructorId: string;
 
-  @BelongsTo(() => User, 'instructorId')
+  @BelongsTo(() => User, 'instructor_id')
   declare instructor: User;
 
-  @BelongsToMany(() => Category, () => CourseCategory)
+  @BelongsToMany(() => Category, {
+    through: () => CourseCategory,
+    foreignKey: 'course_id',
+    otherKey: 'category_id'
+  })
   declare categories: Category[];
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
     defaultValue: DataType.NOW,
+    field: 'created_at'
   })
   declare createdAt: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+    field: 'updated_at'
+  })
+  declare updatedAt: Date;
 }
