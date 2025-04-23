@@ -22,12 +22,22 @@ const config = Object.freeze({
   },
   db: {
     postgresql: {
-      url: (process.env.DATABASE_URL as string) || '',
-      user: (process.env.DB_USERNAME as string) || 'postgres',
-      password: (process.env.DB_PASSWORD as string) || 'postgres',
-      database: (process.env.DB_NAME as string) || 'phm_db',
-      port: parseInt((process.env.DB_PORT as string) || '5432', 10),
-      host: (process.env.DB_HOST as string) || 'localhost',
+      dev: {
+        url: (process.env.DATABASE_URL as string) || '',
+        user: (process.env.DB_USERNAME as string) || 'postgres',
+        password: (process.env.DB_PASSWORD as string) || 'postgres',
+        database: (process.env.DB_NAME as string) || 'phm_db',
+        port: parseInt((process.env.DB_PORT as string) || '5432', 10),
+        host: (process.env.DB_HOST as string) || 'localhost',
+      },
+      prod: {
+        url: (process.env.DATABASE_URL as string) || '',
+        user: (process.env.PROD_DB_USERNAME as string) || 'postgres',
+        password: (process.env.PROD_DB_PASSWORD as string) || 'postgres',
+        database: (process.env.PROD_DB_NAME as string) || 'phm_db',
+        port: parseInt((process.env.PROD_DB_PORT as string) || '5432', 10),
+        host: (process.env.PROD_DB_HOST as string) || 'localhost',
+      },
       autoLoadModels: true,
       synchronize: process.env.NODE_ENV !== ENVIRONMENT.PROD,
     },

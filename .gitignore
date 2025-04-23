@@ -36,7 +36,7 @@ lerna-debug.log*
 
 # Environment variables
 .env
-.env.*
+# .env.*
 
 # temp directory
 .temp

@@ -54,6 +54,84 @@ export class Course extends Model<Course> {
   declare categories: Category[];
 
   @Column({
+    type: DataType.NUMBER,
+    allowNull: false,
+    defaultValue: 0.00,
+  })
+  declare price: number;
+
+  
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    field: "is_free",
+    defaultValue: true,
+  })
+  declare isFree: boolean;
+
+  
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare duration: string;
+
+  
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+    field: "featured_image"
+  })
+  declare featuredImage: string;
+
+  
+  @Column({
+    type: DataType.ENUM('Beginner', 'Intermediate', 'Advanced'),
+    allowNull: true,
+  })
+  declare level: 'Beginner' | 'Intermediate' | 'Advanced';
+
+  
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  declare requirements: string;
+
+  
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: "learning_outcomes"
+  })
+  declare learningOutcomes: string;
+
+  
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: "target_audience"
+  })
+  declare targetAudience: string;
+
+  
+  @Column({
+    type: DataType.ENUM('draft', 'published', 'archived'),
+    allowNull: false,
+    defaultValue: 'draft'
+  })
+  declare status: 'draft' | 'published' | 'archived';
+
+  
+  @Column({
+    type: DataType.NUMBER,
+    allowNull: false,
+    defaultValue: 0,
+    field: "enrollment_count"
+  })
+  declare enrollmentCount: number;
+
+  @Column({
     type: DataType.DATE,
     allowNull: false,
     defaultValue: DataType.NOW,

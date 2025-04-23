@@ -1,12 +1,13 @@
 require('dotenv').config();
+const tsConfig = require('../dist/config/config').default;
 
 module.exports = {
   development: {
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
+    username: tsConfig.db.postgresql.dev.user,
+    password: tsConfig.db.postgresql.dev.password,
+    database: tsConfig.db.postgresql.dev.database,
+    host: tsConfig.db.postgresql.dev.host,
+    port: tsConfig.db.postgresql.dev.port,
     dialect: 'postgres',
     pool: {
       max: parseInt(process.env.DB_POOL_MAX || '20'),
@@ -26,11 +27,11 @@ module.exports = {
     },
   },
   production: {
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
+    username: tsConfig.db.postgresql.prod.user,
+    password: tsConfig.db.postgresql.prod.password,
+    database: tsConfig.db.postgresql.prod.database,
+    host: tsConfig.db.postgresql.prod.host,
+    port: tsConfig.db.postgresql.prod.port,
     dialect: 'postgres',
     dialectOptions: {
       ssl:

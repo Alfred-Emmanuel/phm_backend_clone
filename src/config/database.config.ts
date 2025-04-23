@@ -11,12 +11,20 @@ import { Category } from 'src/modules/categories/entities/category.entity';
 import { CourseCategory } from 'src/modules/categories/entities/course-category.entity';
 
 export default registerAs('database', () => ({
-  dialect: 'postgres',
-  host: config.db.postgresql.host,
-  port: config.db.postgresql.port,
-  username: config.db.postgresql.user,
-  password: config.db.postgresql.password,
-  database: config.db.postgresql.database,
+  dialect: 'postgres', 
+  //dev 
+  // host: config.db.postgresql.dev.host,
+  // port: config.db.postgresql.dev.port,
+  // username: config.db.postgresql.dev.user,
+  // password: config.db.postgresql.dev.password,
+  // database: config.db.postgresql.dev.database,
+
+  //prod
+  host: config.db.postgresql.prod.host,
+  port: config.db.postgresql.prod.port,
+  username: config.db.postgresql.prod.user,
+  password: config.db.postgresql.prod.password,
+  database: config.db.postgresql.prod.database,
   // url: config.db.postgresql.url,
   models: [
     User,
