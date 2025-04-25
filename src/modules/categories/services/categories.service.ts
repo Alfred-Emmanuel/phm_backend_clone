@@ -20,18 +20,30 @@ export class CategoriesService {
   ) {}
 
   async create(createCategoryDto: CreateCategoryDto, adminUserId: string): Promise<Category> {
+    // Start a transaction
+    const transaction = await this.categoryModel.sequelize?.transaction();
+
     try {
-      const category = await this.categoryModel.create(createCategoryDto as any);
+      // Create category within transaction
+      const category = await this.categoryModel.create(createCategoryDto as any, {
+        transaction
+      });
       
-      // Log the action
+      // Log the action within the same transaction
       await this.logAction(adminUserId, 'create_category', 'category', category.id, {
         name: category.name,
         type: category.type,
         slug: category.slug,
-      });
+      }, transaction);
+
+      // If everything is successful, commit the transaction
+      await transaction?.commit();
 
       return category;
     } catch (error) {
+      // If anything fails, rollback the transaction
+      await transaction?.rollback();
+
       if (error.name === 'SequelizeUniqueConstraintError') {
         throw new BadRequestException('Category name or slug already exists');
       }
@@ -141,6 +153,7 @@ export class CategoriesService {
     targetType: string,
     targetId: string,
     details: object,
+    transaction?: any,
   ): Promise<void> {
     await this.adminActionLogModel.create({
       adminUserId,
@@ -148,6 +161,6 @@ export class CategoriesService {
       targetType,
       targetId,
       details,
-    } as any);
+    } as any, { transaction });
   }
 } 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +18,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    return { userId: payload.id, email: payload.email, role: payload.role };
+    try {
+      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        throw new UnauthorizedException('Token has expired');
+      }
+
+      return { 
+        userId: payload.id, 
+        email: payload.email, 
+        role: payload.role 
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 }

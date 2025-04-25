@@ -176,7 +176,7 @@ export class CourseController {
     @Body() updateCourseDto: Partial<CreateCourseDto>,
     @Req() req: RequestWithUser,
   ): Promise<Course> {
-    return this.courseService.update(id, updateCourseDto);
+    return this.courseService.update(id, updateCourseDto, req.user.userId);
   }
 
   @Delete(':id')

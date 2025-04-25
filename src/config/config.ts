@@ -17,7 +17,7 @@ const config = Object.freeze({
   },
   auth: {
     accessTokenSecret: process.env.JWT_SECRET as string,
-    accessTokenExpiresIn: (process.env.JWT_EXPIRES_IN as string) || '1d',
+    accessTokenExpiresIn: (process.env.JWT_EXPIRES_IN as string),
     refreshTokenExpiresIn: '7d',
   },
   db: {

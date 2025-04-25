@@ -18,7 +18,7 @@ import { normalizeNigerianState } from '../../../shared/utils/nigeria-states-hel
 import { normalizeEnumValue } from '../../../shared/utils/case-normalizer';
 import { Col } from 'sequelize/types/utils';
 import { Admin } from '../../admin/entities/admin.entity';
-import { AdminActionLog } from '../../admin/entities/admin_action_log.entity';
+import { AdminActionLog } from '../../admin/entities/admin-action-log.entity';
 
 // Create a GSM network enum for better type safety
 export enum GsmNetwork {
@@ -176,6 +176,13 @@ export class User extends Model<User> {
     defaultValue: 'pending_email_verification',
   })
   declare status: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'hashed_refresh_token',
+  })
+  declare hashedRefreshToken: string | null;
 
   // New relationships
   @HasOne(() => Admin)

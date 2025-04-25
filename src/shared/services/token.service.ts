@@ -44,8 +44,21 @@ export class TokenService {
 
   verifyToken(token: string): jwt.JwtPayload {
     try {
-      return jwt.verify(token, this.getJwtSecret()) as jwt.JwtPayload;
+      const decoded = jwt.verify(token, this.getJwtSecret()) as jwt.JwtPayload;
+      
+      // Check if token has expired
+      if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
+        throw new UnauthorizedException('Token has expired');
+      }
+
+      return decoded;
     } catch (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        throw new UnauthorizedException('Token has expired');
+      }
+      if (err instanceof jwt.JsonWebTokenError) {
+        throw new UnauthorizedException('Invalid token');
+      }
       throw new UnauthorizedException('Invalid token provided');
     }
   }

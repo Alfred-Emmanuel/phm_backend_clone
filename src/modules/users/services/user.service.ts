@@ -19,6 +19,7 @@ import { VerificationTokenService } from '../../../shared/services/verification-
 import { IJwtData } from '../../../shared/interfaces/jwt.interface';
 import { Op, CreationAttributes } from 'sequelize';
 import { UniqueConstraintError } from 'sequelize';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
 
 @Injectable()
 export class UserService {
@@ -128,6 +129,10 @@ export class UserService {
 
     const [accessToken, refreshToken] =
       await this.tokenService.getTokens(jwtData);
+
+    // Hash the refresh token and store it
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await user.update({ hashedRefreshToken });
 
     return {
       accessToken,
@@ -416,5 +421,70 @@ export class UserService {
     }
     
     return user;
+  }
+
+  async refreshTokens(refreshTokenDto: RefreshTokenDto) {
+    try {
+      // Verify the refresh token
+      const tokenDetails = await this.tokenService.verifyToken(refreshTokenDto.refreshToken);
+      
+      // Find the user
+      const user = await this.userModel.findByPk(tokenDetails.id);
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Verify the stored hashed refresh token
+      const isRefreshTokenValid = await bcrypt.compare(
+        refreshTokenDto.refreshToken,
+        user.hashedRefreshToken,
+      );
+
+      if (!isRefreshTokenValid) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Generate new tokens
+      const jwtData: IJwtData = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      };
+
+      const [newAccessToken, newRefreshToken] = await this.tokenService.getTokens(jwtData);
+
+      // Hash and store the new refresh token
+      const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+      await user.update({ hashedRefreshToken });
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+        },
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  async logout(userId: string): Promise<void> {
+    const user = await this.userModel.findByPk(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Clear the stored refresh token
+    await user.update({ hashedRefreshToken: null });
   }
 }

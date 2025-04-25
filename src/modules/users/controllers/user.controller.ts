@@ -9,8 +9,10 @@ import {
   Put,
   Delete,
   Request,
-  ParseUUIDPipe
+  ParseUUIDPipe,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { UserService } from '../services/user.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { CreateStudentDto } from '../dto/create-student.dto';
@@ -29,6 +31,7 @@ import {
   ApiSecurity,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -72,7 +75,6 @@ export class UserController {
       type: 'object',
       properties: {
         accessToken: { type: 'string' },
-        refreshToken: { type: 'string' },
         user: {
           type: 'object',
           properties: {
@@ -87,8 +89,21 @@ export class UserController {
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiBody({ type: LoginDto })
-  async login(@Body() loginDto: LoginDto) {
-    return this.userService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
+    const { accessToken, refreshToken, user } = await this.userService.login(loginDto);
+    
+    // Set refresh token as HTTP-only cookie
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
+
+    return {
+      accessToken,
+      user,
+    };
   }
 
   @Get('verify-email')
@@ -253,5 +268,74 @@ export class UserController {
       req.user.id,
       req.user.role,
     );
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tokens refreshed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string' },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  @ApiBody({ type: RefreshTokenDto })
+  async refreshTokens(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { accessToken, refreshToken, user } = await this.userService.refreshTokens(refreshTokenDto);
+    
+    // Set new refresh token as HTTP-only cookie
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return {
+      accessToken,
+      user,
+    };
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Logout user',
+    description: 'Clears the refresh token and logs out the user. Requires JWT authentication.',
+  })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  async logout(
+    @Request() req: any,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    // Clear the stored refresh token
+    await this.userService.logout(req.user.id);
+
+    // Clear the refresh token cookie
+    response.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    return { message: 'Logout successful' };
   }
 }

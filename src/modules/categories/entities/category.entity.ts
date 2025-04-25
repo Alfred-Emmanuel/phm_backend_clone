@@ -61,6 +61,7 @@ export class Category extends Model<Category> {
     type: DataType.DATE,
     allowNull: false,
     defaultValue: DataType.NOW,
+    field: "created_at"
   })
   declare createdAt: Date;
 
@@ -68,6 +69,7 @@ export class Category extends Model<Category> {
     type: DataType.DATE,
     allowNull: false,
     defaultValue: DataType.NOW,
+    field: "updated_at"
   })
   declare updatedAt: Date;
 } 

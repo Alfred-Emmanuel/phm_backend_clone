@@ -166,8 +166,14 @@ export class CourseService {
   async update(
     id: string,
     updateCourseDto: UpdateCourseDto,
+    currentUserId: string,
   ): Promise<Course> {
     const course = await this.findOne(id);
+
+    // Check if current user is the course instructor
+    if (course.instructorId !== currentUserId) {
+      throw new ForbiddenException('Only the course instructor can update this course');
+    }
 
     // Extract categoryIds from DTO
     const { categoryIds, ...courseData } = updateCourseDto;

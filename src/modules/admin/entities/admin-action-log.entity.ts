@@ -24,24 +24,28 @@ export class AdminActionLog extends Model<AdminActionLog> {
   @Column({
     type: DataType.UUID,
     allowNull: false,
+    field: "admin_user_id"
   })
   declare adminUserId: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    field: "action_type"
   })
   declare actionType: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: true,
+    field: "target_type"
   })
   declare targetType: string;
 
   @Column({
     type: DataType.UUID,
     allowNull: true,
+    field: "target_id"
   })
   declare targetId: string;
 
@@ -58,6 +62,15 @@ export class AdminActionLog extends Model<AdminActionLog> {
     type: DataType.DATE,
     allowNull: false,
     defaultValue: DataType.NOW,
+    field: "created_at"
   })
   declare createdAt: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+    field: "updated_at"
+  })
+  declare updatedAt: Date;
 } 

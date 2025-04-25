@@ -18,12 +18,12 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migrate": "npm run build && npx sequelize-cli db:migrate",
-    "migrate:undo": "npm run build && npx sequelize-cli db:migrate:undo",
-    "migrate:undo:all": "npm run build && npx sequelize-cli db:migrate:undo:all",
-    "migrate:prod": "npm run build && npx sequelize-cli db:migrate --env production",
-    "migrate:undo:prod": "npm run build && npx sequelize-cli db:migrate:undo --env production",
-    "migrate:undo:all:prod": "npm run build && npx sequelize-cli db:migrate:undo:all --env production"
+    "migrate": "npx sequelize-cli db:migrate",
+    "migrate:undo": "npx sequelize-cli db:migrate:undo",
+    "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all",
+    "migrate:prod": "npx sequelize-cli db:migrate --env production",
+    "migrate:undo:prod": "npx sequelize-cli db:migrate:undo --env production",
+    "migrate:undo:all:prod": "npx sequelize-cli db:migrate:undo:all --env production"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
