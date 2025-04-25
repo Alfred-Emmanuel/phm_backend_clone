@@ -9,6 +9,7 @@ import { Admin } from 'src/modules/admin/entities/admin.entity';
 import { AdminActionLog } from 'src/modules/admin/entities/admin-action-log.entity';
 import { Category } from 'src/modules/categories/entities/category.entity';
 import { CourseCategory } from 'src/modules/categories/entities/course-category.entity';
+import { UserLesson } from 'src/modules/lessons/entities/user-lesson.entity';
 
 export default registerAs('database', () => ({
   dialect: 'postgres', 
@@ -35,7 +36,8 @@ export default registerAs('database', () => ({
     Admin,
     AdminActionLog,
     Category,
-    CourseCategory
+    CourseCategory,
+    UserLesson
   ],
   autoLoadModels: config.db.postgresql.autoLoadModels,
   synchronize: config.db.postgresql.synchronize,

@@ -7,7 +7,8 @@ import {
   Param,
   Delete,
   UseGuards,
-  ParseUUIDPipe
+  ParseUUIDPipe,
+  Request,
 } from '@nestjs/common';
 import { LessonService } from '../services/lesson.service';
 import { CreateLessonDto } from '../dto/create-lesson.dto';
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { Lesson } from '../entities/lesson.entity';
+import { UserLesson } from '../entities/user-lesson.entity';
 import {
   ApiTags,
   ApiOperation,
@@ -108,5 +110,122 @@ export class LessonController {
     @Body('lessonIds') lessonIds: string[],
   ): Promise<void> {
     return this.lessonService.reorderLessons(courseId, lessonIds);
+  }
+
+  @Post(':id/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Mark a lesson as completed',
+    description: 'Marks a lesson as completed for the current user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lesson marked as completed',
+    type: UserLesson,
+  })
+  async markLessonAsCompleted(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Request() req: any,
+  ): Promise<UserLesson> {
+    return this.lessonService.markLessonAsCompleted(req.user.id, id);
+  }
+
+  @Post(':id/incomplete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Mark a lesson as incomplete',
+    description: 'Marks a lesson as incomplete for the current user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lesson marked as incomplete',
+    type: UserLesson,
+  })
+  async markLessonAsIncomplete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Request() req: any,
+  ): Promise<UserLesson> {
+    return this.lessonService.markLessonAsIncomplete(req.user.id, id);
+  }
+
+  @Post(':id/bookmark')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Toggle lesson bookmark',
+    description: 'Toggles the bookmark status of a lesson for the current user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lesson bookmark status toggled',
+    type: UserLesson,
+  })
+  async toggleBookmark(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Request() req: any,
+  ): Promise<UserLesson> {
+    return this.lessonService.toggleBookmark(req.user.id, id);
+  }
+
+  @Get('course/:courseId/progress')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get user progress in a course',
+    description: 'Returns the progress of the current user in a specific course',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User progress retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        totalLessons: { type: 'number' },
+        completedLessons: { type: 'number' },
+        progress: { type: 'number' },
+        lessons: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              title: { type: 'string' },
+              position: { type: 'number' },
+              completed: { type: 'boolean' },
+              isBookmarked: { type: 'boolean' },
+              completedAt: { type: 'string', nullable: true },
+              startedAt: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUserLessonProgress(
+    @Param('courseId', new ParseUUIDPipe()) courseId: string,
+    @Request() req: any,
+  ) {
+    return this.lessonService.getUserLessonProgress(req.user.id, courseId);
+  }
+
+  @Post(':id/start')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Start a lesson',
+    description: 'Marks the start time of a lesson for the current user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lesson started successfully',
+    type: UserLesson,
+  })
+  async startLesson(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Request() req: any,
+  ): Promise<UserLesson> {
+    return this.lessonService.startLesson(req.user.id, id);
   }
 }

@@ -7,7 +7,8 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Lesson } from '../entities/lesson.entity';
 import { CreateLessonDto } from '../dto/create-lesson.dto';
 import { Course } from '../../courses/entities/course.entity';
-import { Op } from 'sequelize';
+import { UserLesson } from '../entities/user-lesson.entity';
+import { Op, CreationAttributes } from 'sequelize';
 
 @Injectable()
 export class LessonService {
@@ -16,6 +17,8 @@ export class LessonService {
     private lessonModel: typeof Lesson,
     @InjectModel(Course)
     private courseModel: typeof Course,
+    @InjectModel(UserLesson)
+    private userLessonModel: typeof UserLesson,
   ) {}
 
 async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promise<Lesson> {
@@ -210,5 +213,159 @@ async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promi
         },
       );
     }
+  }
+
+  async markLessonAsCompleted(userId: string, lessonId: string): Promise<UserLesson> {
+    const lesson = await this.findOne(lessonId);
+
+    if (!lesson) {
+      throw new BadRequestException("Lesson not found!")
+    }
+    
+    const [userLesson, created] = await this.userLessonModel.findOrCreate({
+      where: {
+        userId,
+        lessonId,
+      },
+      defaults: {
+        userId,
+        lessonId,
+        completed: true,
+        completedAt: new Date(),
+        startedAt: new Date(),
+      } as CreationAttributes<UserLesson>,
+    });
+
+    if (!created) {
+      userLesson.completed = true;
+      userLesson.completedAt = new Date();
+      await userLesson.save();
+    }
+
+    return userLesson;
+  }
+
+  async markLessonAsIncomplete(userId: string, lessonId: string): Promise<UserLesson> {
+    const lesson = await this.findOne(lessonId);
+
+    if (!lesson) {
+      throw new BadRequestException("Lesson not found!")
+    }
+    
+    const userLesson = await this.userLessonModel.findOne({
+      where: {
+        userId,
+        lessonId,
+      },
+    });
+
+    if (!userLesson) {
+      throw new NotFoundException('User lesson record not found');
+    }
+
+    userLesson.completed = false;
+    userLesson.completedAt = null;
+    await userLesson.save();
+
+    return userLesson;
+  }
+
+  async toggleBookmark(userId: string, lessonId: string): Promise<UserLesson> {
+    const lesson = await this.findOne(lessonId);
+
+    if (!lesson) {
+      throw new BadRequestException("Lesson not found!")
+    }
+    
+    const [userLesson, created] = await this.userLessonModel.findOrCreate({
+      where: {
+        userId,
+        lessonId,
+      },
+      defaults: {
+        userId,
+        lessonId,
+        isBookmarked: true,
+        startedAt: new Date(),
+      } as CreationAttributes<UserLesson>,
+    });
+
+    if (!created) {
+      userLesson.isBookmarked = !userLesson.isBookmarked;
+      await userLesson.save();
+    }
+
+    return userLesson;
+  }
+
+  async getUserLessonProgress(userId: string, courseId: string): Promise<{
+    totalLessons: number;
+    completedLessons: number;
+    progress: number;
+    lessons: Array<{
+      id: string;
+      title: string;
+      position: number;
+      completed: boolean;
+      isBookmarked: boolean;
+      completedAt: Date | null;
+      startedAt: Date;
+    }>;
+  }> {
+    const lessons = await this.findByCourse(courseId);
+    const userLessons = await this.userLessonModel.findAll({
+      where: {
+        userId,
+        lessonId: {
+          [Op.in]: lessons.map(lesson => lesson.id),
+        },
+      },
+    });
+
+    const userLessonsMap = new Map(
+      userLessons.map(ul => [ul.lessonId, ul])
+    );
+
+    const completedLessons = userLessons.filter(ul => ul.completed).length;
+    const totalLessons = lessons.length;
+    const progress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+
+    const lessonProgress = lessons.map(lesson => {
+      const userLesson = userLessonsMap.get(lesson.id);
+      return {
+        id: lesson.id,
+        title: lesson.title,
+        position: lesson.position,
+        completed: userLesson?.completed || false,
+        isBookmarked: userLesson?.isBookmarked || false,
+        completedAt: userLesson?.completedAt || null,
+        startedAt: userLesson?.startedAt || new Date(),
+      };
+    });
+
+    return {
+      totalLessons,
+      completedLessons,
+      progress,
+      lessons: lessonProgress,
+    };
+  }
+
+  async startLesson(userId: string, lessonId: string): Promise<UserLesson> {
+    const lesson = await this.findOne(lessonId);
+    
+    const [userLesson, created] = await this.userLessonModel.findOrCreate({
+      where: {
+        userId,
+        lessonId,
+      },
+      defaults: {
+        userId,
+        lessonId,
+        startedAt: new Date(),
+      } as CreationAttributes<UserLesson>,
+    });
+
+    return userLesson;
   }
 }
