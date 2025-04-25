@@ -1,15 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Request } from 'express';
 import { InjectModel } from '@nestjs/sequelize';
 import { Admin } from '../../modules/admin/entities/admin.entity';
-
-interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-    email: string;
-    role: string;
-  };
-}
+import { RequestWithUser } from '../interfaces/request.interface';
 
 @Injectable()
 export class SuperAdminGuard implements CanActivate {

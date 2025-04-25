@@ -24,15 +24,6 @@ export class CourseEnrollmentService {
   async create(
     createEnrollmentDto: CreateEnrollmentDto,
   ): Promise<CourseEnrollment> {
-    const user = await this.userModel.findByPk(createEnrollmentDto.userId);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (user.role !== 'student') {
-      throw new BadRequestException('Only students can enroll in courses');
-    }
-
     const course = await this.courseModel.findByPk(
       createEnrollmentDto.courseId,
     );
@@ -52,7 +43,11 @@ export class CourseEnrollmentService {
       throw new ConflictException('Student is already enrolled in this course');
     }
 
-    return this.enrollmentModel.create(createEnrollmentDto as any);
+    const enrollment = this.enrollmentModel.create(createEnrollmentDto as any);
+
+    await course.increment('enrollmentCount')
+
+    return enrollment;
   }
 
   async findAll(): Promise<CourseEnrollment[]> {

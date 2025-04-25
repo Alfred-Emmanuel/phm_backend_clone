@@ -1,13 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Request } from 'express';
-
-interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-    email: string;
-    role: string;
-  };
-}
+import { RequestWithUser } from '../interfaces/request.interface';
 
 @Injectable()
 export class AdminGuard implements CanActivate {

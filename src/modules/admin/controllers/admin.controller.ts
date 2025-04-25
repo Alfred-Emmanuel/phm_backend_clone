@@ -9,6 +9,7 @@ import {
   Req,
   Delete,
   Query,
+  ParseUUIDPipe
 } from '@nestjs/common';
 import { AdminService } from '../services/admin.service';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
@@ -26,18 +27,10 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { Request } from 'express';
+import { RequestWithUser } from '../../../shared/interfaces/request.interface';
 import { FilterUsersDto } from '../dto/filter-users.dto';
 import { FilterActionLogsDto } from '../dto/filter-action-logs.dto';
 import { PaginatedActionLogsDto } from '../dto/paginated-action-logs.dto';
-
-interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-    email: string;
-    role: string;
-  };
-}
 
 @ApiTags('admin')
 @Controller('admin')
@@ -69,7 +62,7 @@ export class AdminController {
     description: 'User details',
     type: User,
   })
-  async findOneUser(@Param('id') id: string): Promise<User> {
+  async findOneUser(@Param('id', new ParseUUIDPipe()) id: string): Promise<User> {
     return this.adminService.findOneUser(id);
   }
 
@@ -90,7 +83,7 @@ export class AdminController {
     description: 'User not found',
   })
   async updateUserStatus(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateUserStatusDto: UpdateUserStatusDto,
     @Req() req: RequestWithUser,
   ): Promise<User> {
@@ -119,7 +112,7 @@ export class AdminController {
     description: 'Forbidden - Only super admins can update user roles',
   })
   async updateUserRole(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateUserRoleDto: UpdateUserRoleDto,
     @Req() req: RequestWithUser,
   ): Promise<User> {
@@ -154,7 +147,7 @@ export class AdminController {
     description: 'Instructor not found or already approved',
   })
   async approveInstructor(
-    @Param('id') instructorId: string,
+    @Param('id', new ParseUUIDPipe()) instructorId: string,
     @Req() req: RequestWithUser,
   ): Promise<User> {
     return this.adminService.approveInstructor(instructorId, req.user.userId);
@@ -177,7 +170,7 @@ export class AdminController {
     description: 'Instructor not found or already rejected',
   })
   async rejectInstructor(
-    @Param('id') instructorId: string,
+    @Param('id', new ParseUUIDPipe()) instructorId: string,
     @Req() req: RequestWithUser,
   ): Promise<User> {
     return this.adminService.rejectInstructor(instructorId, req.user.userId);
@@ -199,7 +192,7 @@ export class AdminController {
     description: 'User not found',
   })
   async deleteUser(
-    @Param('id') userId: string,
+    @Param('id', new ParseUUIDPipe()) userId: string,
     @Req() req: RequestWithUser,
   ): Promise<void> {
     return this.adminService.deleteUser(userId, req.user.userId);
@@ -232,7 +225,7 @@ export class AdminController {
     description: 'Enrollment not found',
   })
   async deleteEnrollment(
-    @Param('id') enrollmentId: string,
+    @Param('id', new ParseUUIDPipe()) enrollmentId: string,
     @Req() req: RequestWithUser,
   ): Promise<void> {
     return this.adminService.deleteEnrollment(enrollmentId, req.user.userId);

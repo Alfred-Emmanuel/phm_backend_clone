@@ -9,6 +9,7 @@ import {
   UseGuards,
   Query,
   Req,
+  ParseUUIDPipe
 } from '@nestjs/common';
 import { CourseService } from '../services/course.service';
 import { CreateCourseDto } from '../dto/create-course.dto';
@@ -27,16 +28,7 @@ import {
   ApiSecurity,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Request } from 'express';
-
-// Define an interface extending Request to include the user property
-interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-    email: string;
-    role: string;
-  };
-}
+import { RequestWithUser } from '../../../shared/interfaces/request.interface';
 
 @ApiTags('courses')
 @Controller('courses')
@@ -124,7 +116,7 @@ export class CourseController {
     type: [Course],
   })
   @ApiResponse({ status: 404, description: 'Instructor not found.' })
-  async findByInstructor(@Param('id') instructorId: string): Promise<Course[]> {
+  async findByInstructor(@Param('id', new ParseUUIDPipe()) instructorId: string): Promise<Course[]> {
     return this.courseService.findByInstructor(instructorId);
   }
 
@@ -141,7 +133,7 @@ export class CourseController {
     type: Course,
   })
   @ApiResponse({ status: 404, description: 'Course not found.' })
-  async findOne(@Param('id') id: string): Promise<Course> {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Course> {
     return this.courseService.findOne(id);
   }
 
@@ -180,7 +172,7 @@ export class CourseController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Course not found.' })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateCourseDto: Partial<CreateCourseDto>,
     @Req() req: RequestWithUser,
   ): Promise<Course> {
@@ -207,7 +199,7 @@ export class CourseController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Course not found.' })
   async remove(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: RequestWithUser
   ): Promise<void> {
     return this.courseService.remove(id);

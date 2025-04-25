@@ -52,12 +52,12 @@ export class UpdateCourseDto {
 
   @ApiProperty({
     description: 'How long is the course supposed to last',
-    example: '6 weeks',
-    required: false,
+    example:
+      '600',
   })
   @IsString()
   @IsOptional()
-  duration?: string;
+  duration?: number;
 
   @ApiProperty({
     description: 'A url link to an image',

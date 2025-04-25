@@ -9,6 +9,7 @@ import {
   Put,
   Delete,
   Request,
+  ParseUUIDPipe
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -197,7 +198,7 @@ export class UserController {
     description: 'Unauthorized - Invalid or missing JWT token',
   })
   async findOne(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Request() req: any,
   ): Promise<User> {
     return this.userService.findOne(
@@ -222,7 +223,7 @@ export class UserController {
   })
   @ApiBody({ type: CreateUserDto })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateDto: Partial<CreateUserDto>,
   ): Promise<User> {
     return this.userService.update(id, updateDto);
@@ -244,7 +245,7 @@ export class UserController {
     description: 'Unauthorized - Invalid or missing JWT token',
   })
   async findByEmail(
-    @Param('email') email: string,
+    @Param('email', new ParseUUIDPipe()) email: string,
     @Request() req: any,
   ): Promise<User> {
     return this.userService.findByEmail(

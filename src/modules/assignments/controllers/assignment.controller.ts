@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  ParseUUIDPipe
 } from '@nestjs/common';
 import { AssignmentService } from '../services/assignment.service';
 import { CreateAssignmentDto } from '../dto/create-assignment.dto';
@@ -36,7 +37,7 @@ export class AssignmentController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async findOne(@Param('id') id: string): Promise<Assignment> {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Assignment> {
     return this.assignmentService.findOne(id);
   }
 
@@ -44,7 +45,7 @@ export class AssignmentController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateAssignmentDto: Partial<CreateAssignmentDto>,
   ): Promise<Assignment> {
     return this.assignmentService.update(id, updateAssignmentDto);
@@ -53,14 +54,14 @@ export class AssignmentController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
     return this.assignmentService.remove(id);
   }
 
   @Get('course/:courseId')
   @UseGuards(JwtAuthGuard)
   async findByCourse(
-    @Param('courseId') courseId: string,
+    @Param('courseId', new ParseUUIDPipe()) courseId: string,
   ): Promise<Assignment[]> {
     return this.assignmentService.findByCourse(courseId);
   }

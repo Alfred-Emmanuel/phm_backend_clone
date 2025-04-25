@@ -2,9 +2,9 @@ import { IsString, IsNotEmpty, IsOptional, IsUUID, IsArray, IsNumber, IsBoolean,
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum CourseLevel {
-  BEGINNER = 'Beginner',
-  INTERMEDIATE = 'Intermediate',
-  ADVANCED = 'Advanced'
+  BEGINNER = 'beginner',
+  INTERMEDIATE = 'intermediate',
+  ADVANCED = 'advanced'
 }
 
 export enum CourseStatus {
@@ -63,11 +63,11 @@ export class CreateCourseDto {
   @ApiProperty({
     description: 'How long is the course supposed to last',
     example:
-      '6 weeks',
+      '600',
   })
   @IsString()
   @IsNotEmpty()
-  duration: string;
+  duration: number;
 
   @ApiProperty({
     description: 'A url link to an image',

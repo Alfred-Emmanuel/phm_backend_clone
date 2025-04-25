@@ -8,6 +8,7 @@ import {
   Body,
   UseGuards,
   Req,
+  ParseUUIDPipe
 } from '@nestjs/common';
 import { CategoriesService } from '../services/categories.service';
 import { CreateCategoryDto } from '../dto/create-category.dto';
@@ -22,15 +23,7 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { Request } from 'express';
-
-interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-    email: string;
-    role: string;
-  };
-}
+import { RequestWithUser } from '../../../shared/interfaces/request.interface';
 
 @ApiTags('categories')
 @Controller('categories')
@@ -84,7 +77,7 @@ export class CategoriesController {
     status: 404,
     description: 'Category not found',
   })
-  async findOne(@Param('id') id: string): Promise<Category> {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Category> {
     return this.categoriesService.findOne(id);
   }
 
@@ -104,7 +97,7 @@ export class CategoriesController {
     status: 404,
     description: 'Category not found',
   })
-  async findOneBySlug(@Param('slug') slug: string): Promise<Category> {
+  async findOneBySlug(@Param('slug', new ParseUUIDPipe()) slug: string): Promise<Category> {
     return this.categoriesService.findOneBySlug(slug);
   }
 
@@ -129,7 +122,7 @@ export class CategoriesController {
     description: 'Category not found',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
     @Req() req: RequestWithUser,
   ): Promise<Category> {
@@ -152,7 +145,7 @@ export class CategoriesController {
     description: 'Category not found',
   })
   async remove(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: RequestWithUser,
   ): Promise<void> {
     return this.categoriesService.remove(id, req.user.userId);

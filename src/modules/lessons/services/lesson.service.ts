@@ -18,37 +18,58 @@ export class LessonService {
     private courseModel: typeof Course,
   ) {}
 
-  async create(createLessonDto: CreateLessonDto): Promise<Lesson> {
-    const course = await this.courseModel.findByPk(createLessonDto.courseId);
-    if (!course) {
-      throw new NotFoundException('Course not found');
-    }
+async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promise<Lesson> {
+  const course = await this.courseModel.findByPk(courseId);
+  if (!course) {
+    throw new NotFoundException('Course not found');
+  }
 
-    // Check if position is already taken
+  // Auto-assign position if not provided
+  let position = createLessonDto.position;
+  if (position === undefined || position === null) {
+    // Use the stored max position in the course model instead of querying the lesson table
+    position = (course.maxPosition ?? -1) + 1;
+  } else {
+    // If position is provided and exists, shift others
     const existingLesson = await this.lessonModel.findOne({
       where: {
-        courseId: createLessonDto.courseId,
-        position: createLessonDto.position,
+        courseId,
+        position,
       },
     });
 
     if (existingLesson) {
-      // Shift existing lessons to make space
+      // Perform a batch update to shift the positions of lessons greater than or equal to the new position
       await this.lessonModel.update(
         { position: this.lessonModel.sequelize?.literal('position + 1') },
         {
           where: {
-            courseId: createLessonDto.courseId,
+            courseId,
             position: {
-              [Op.gte]: createLessonDto.position,
+              [Op.gte]: position,
             },
           },
         },
       );
     }
-
-    return this.lessonModel.create(createLessonDto as any);
   }
+
+  // Auto-assign title if not provided
+  const title = createLessonDto.title?.trim() || `Lesson ${position + 1}`;
+
+  // Create the new lesson
+  const newLesson = await this.lessonModel.create({
+    ...createLessonDto,
+    courseId,
+    position,
+    title,
+  } as any);
+
+  // After creating the lesson, update the maxPosition for the course
+  await course.update({ maxPosition: position });
+
+  return newLesson;
+}
 
   async findAll(): Promise<Lesson[]> {
     return this.lessonModel.findAll({

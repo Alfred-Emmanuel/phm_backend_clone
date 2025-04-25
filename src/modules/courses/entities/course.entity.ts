@@ -6,6 +6,7 @@ import {
   ForeignKey,
   BelongsTo,
   BelongsToMany,
+  Index
 } from 'sequelize-typescript';
 import { User } from '../../users/entities/user.entity';
 import { Category } from '../../categories/entities/category.entity';
@@ -14,6 +15,15 @@ import { CourseCategory } from '../../categories/entities/course-category.entity
 @Table({
   tableName: 'courses',
   timestamps: true,
+
+    indexes: [
+    { name: 'idx_instructor_id', fields: ['instructor_id'] }, // Correct field name
+    { name: 'idx_is_free', fields: ['is_free'] },           // Correct field name
+    { name: 'idx_level', fields: ['level'] },               // Correct field name
+    { name: 'idx_status', fields: ['status'] },             // Correct field name
+    // Add any other single or composite indexes here
+    // { name: 'idx_composite_example', fields: ['status', 'level'] },
+  ]
 })
 export class Course extends Model<Course> {
   @Column({
@@ -60,7 +70,6 @@ export class Course extends Model<Course> {
   })
   declare price: number;
 
-  
   @Column({
     type: DataType.BOOLEAN,
     allowNull: false,
@@ -69,14 +78,12 @@ export class Course extends Model<Course> {
   })
   declare isFree: boolean;
 
-  
   @Column({
-    type: DataType.STRING,
+    type: DataType.NUMBER,
     allowNull: true,
   })
-  declare duration: string;
+  declare duration: number;
 
-  
   @Column({
     type: DataType.TEXT,
     allowNull: true,
@@ -84,21 +91,18 @@ export class Course extends Model<Course> {
   })
   declare featuredImage: string;
 
-  
   @Column({
-    type: DataType.ENUM('Beginner', 'Intermediate', 'Advanced'),
+    type: DataType.ENUM('beginner', 'intermediate', 'advanced'),
     allowNull: true,
   })
-  declare level: 'Beginner' | 'Intermediate' | 'Advanced';
+  declare level: 'beginner' | 'intermediate' | 'advanced';
 
-  
   @Column({
     type: DataType.TEXT,
     allowNull: true,
   })
   declare requirements: string;
 
-  
   @Column({
     type: DataType.STRING,
     allowNull: true,
@@ -106,7 +110,6 @@ export class Course extends Model<Course> {
   })
   declare learningOutcomes: string;
 
-  
   @Column({
     type: DataType.STRING,
     allowNull: true,
@@ -114,15 +117,13 @@ export class Course extends Model<Course> {
   })
   declare targetAudience: string;
 
-  
   @Column({
     type: DataType.ENUM('draft', 'published', 'archived'),
     allowNull: false,
-    defaultValue: 'draft'
+    defaultValue: 'published'
   })
   declare status: 'draft' | 'published' | 'archived';
 
-  
   @Column({
     type: DataType.NUMBER,
     allowNull: false,
@@ -130,6 +131,13 @@ export class Course extends Model<Course> {
     field: "enrollment_count"
   })
   declare enrollmentCount: number;
+
+  @Column({
+    type: DataType.NUMBER,
+    defaultValue: 0,
+    field: "max_position"
+  })
+  maxPosition: number;
 
   @Column({
     type: DataType.DATE,
