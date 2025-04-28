@@ -218,7 +218,7 @@ export class UserController {
   ): Promise<User> {
     return this.userService.findOne(
       id,
-      req.user.id,
+      req.user.userId,
       req.user.role,
     );
   }
@@ -265,7 +265,7 @@ export class UserController {
   ): Promise<User> {
     return this.userService.findByEmail(
       email,
-      req.user.id,
+      req.user.userId,
       req.user.role,
     );
   }
@@ -327,7 +327,7 @@ export class UserController {
     @Res({ passthrough: true }) response: Response,
   ) {
     // Clear the stored refresh token
-    await this.userService.logout(req.user.id);
+    await this.userService.logout(req.user.userId);
 
     // Clear the refresh token cookie
     response.clearCookie('refreshToken', {
