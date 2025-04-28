@@ -128,7 +128,7 @@ export class LessonController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Request() req: any,
   ): Promise<UserLesson> {
-    return this.lessonService.markLessonAsCompleted(req.user.id, id);
+    return this.lessonService.markLessonAsCompleted(req.user.userId, id);
   }
 
   @Post(':id/incomplete')
@@ -147,7 +147,7 @@ export class LessonController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Request() req: any,
   ): Promise<UserLesson> {
-    return this.lessonService.markLessonAsIncomplete(req.user.id, id);
+    return this.lessonService.markLessonAsIncomplete(req.user.userId, id);
   }
 
   @Post(':id/bookmark')
@@ -166,7 +166,7 @@ export class LessonController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Request() req: any,
   ): Promise<UserLesson> {
-    return this.lessonService.toggleBookmark(req.user.id, id);
+    return this.lessonService.toggleBookmark(req.user.userId, id);
   }
 
   @Get('course/:courseId/progress')
@@ -207,7 +207,7 @@ export class LessonController {
     @Param('courseId', new ParseUUIDPipe()) courseId: string,
     @Request() req: any,
   ) {
-    return this.lessonService.getUserLessonProgress(req.user.id, courseId);
+    return this.lessonService.getUserLessonProgress(req.user.userId, courseId);
   }
 
   @Post(':id/start')
@@ -226,6 +226,6 @@ export class LessonController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Request() req: any,
   ): Promise<UserLesson> {
-    return this.lessonService.startLesson(req.user.id, id);
+    return this.lessonService.startLesson(req.user.userId, id);
   }
 }

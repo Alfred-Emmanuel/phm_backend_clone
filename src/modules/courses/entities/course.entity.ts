@@ -137,7 +137,7 @@ export class Course extends Model<Course> {
     defaultValue: 0,
     field: "max_position"
   })
-  maxPosition: number;
+  declare maxPosition: number;
 
   @Column({
     type: DataType.DATE,

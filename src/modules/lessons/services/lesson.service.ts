@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Lesson } from '../entities/lesson.entity';
@@ -9,6 +10,7 @@ import { CreateLessonDto } from '../dto/create-lesson.dto';
 import { Course } from '../../courses/entities/course.entity';
 import { UserLesson } from '../entities/user-lesson.entity';
 import { Op, CreationAttributes } from 'sequelize';
+import { CourseEnrollmentService } from '../../course-enrollments/services/course-enrollment.service';
 
 @Injectable()
 export class LessonService {
@@ -19,60 +21,74 @@ export class LessonService {
     private courseModel: typeof Course,
     @InjectModel(UserLesson)
     private userLessonModel: typeof UserLesson,
+    private readonly enrollmentService: CourseEnrollmentService,
   ) {}
 
-async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promise<Lesson> {
-  const course = await this.courseModel.findByPk(courseId);
-  if (!course) {
-    throw new NotFoundException('Course not found');
-  }
-
-  // Auto-assign position if not provided
-  let position = createLessonDto.position;
-  if (position === undefined || position === null) {
-    // Use the stored max position in the course model instead of querying the lesson table
-    position = (course.maxPosition ?? -1) + 1;
-  } else {
-    // If position is provided and exists, shift others
-    const existingLesson = await this.lessonModel.findOne({
-      where: {
-        courseId,
-        position,
-      },
-    });
-
-    if (existingLesson) {
-      // Perform a batch update to shift the positions of lessons greater than or equal to the new position
-      await this.lessonModel.update(
-        { position: this.lessonModel.sequelize?.literal('position + 1') },
-        {
-          where: {
-            courseId,
-            position: {
-              [Op.gte]: position,
-            },
-          },
-        },
-      );
+  private async checkEnrollment(userId: string, courseId: string): Promise<void> {
+    const enrollment = await this.enrollmentService.findByUser(userId);
+    const isEnrolled = enrollment.some(e => e.courseId === courseId);
+    
+    if (!isEnrolled) {
+      throw new ForbiddenException('You must be enrolled in this course to perform this action');
     }
   }
 
-  // Auto-assign title if not provided
-  const title = createLessonDto.title?.trim() || `Lesson ${position + 1}`;
+  async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promise<Lesson> {
+    const course = await this.courseModel.findByPk(courseId);
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
 
-  // Create the new lesson
-  const newLesson = await this.lessonModel.create({
-    ...createLessonDto,
-    courseId,
-    position,
-    title,
-  } as any);
+    // Auto-assign position if not provided
+    let position = createLessonDto.position;
+    if (position === undefined || position === null) {
+      // Use the stored max position in the course model instead of querying the lesson table
+      position = (course.maxPosition ?? -1) + 1;
+    } else {
+      // If position is provided and exists, shift others
+      const existingLesson = await this.lessonModel.findOne({
+        where: {
+          courseId,
+          position,
+        },
+      });
 
-  // After creating the lesson, update the maxPosition for the course
-  await course.update({ maxPosition: position });
+      if (existingLesson) {
+        // Perform a batch update to shift the positions of lessons greater than or equal to the new position
+        await this.lessonModel.update(
+          { position: this.lessonModel.sequelize?.literal('position + 1') },
+          {
+            where: {
+              courseId,
+              position: {
+                [Op.gte]: position,
+              },
+            },
+          },
+        );
+      }
+    }
 
-  return newLesson;
-}
+    // Auto-assign title if not provided
+    const title = createLessonDto.title?.trim() || `Lesson ${position + 1}`;
+
+    // Create the new lesson
+    const newLesson = await this.lessonModel.create({
+      ...createLessonDto,
+      courseId,
+      position,
+      title,
+    } as any);
+
+    // After creating the lesson, update the maxPosition for the course
+    // Only update if the new position is greater than the current maxPosition
+    console.log('position:', position, 'course.maxPosition:', course.maxPosition);
+    if (position > (course.maxPosition ?? -1)) {
+      await course.update({ maxPosition: position });
+    }
+
+    return newLesson;
+  }
 
   async findAll(): Promise<Lesson[]> {
     return this.lessonModel.findAll({
@@ -221,6 +237,8 @@ async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promi
     if (!lesson) {
       throw new BadRequestException("Lesson not found!")
     }
+
+    await this.checkEnrollment(userId, lesson.courseId);
     
     const [userLesson, created] = await this.userLessonModel.findOrCreate({
       where: {
@@ -251,6 +269,8 @@ async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promi
     if (!lesson) {
       throw new BadRequestException("Lesson not found!")
     }
+
+    await this.checkEnrollment(userId, lesson.courseId);
     
     const userLesson = await this.userLessonModel.findOne({
       where: {
@@ -276,6 +296,8 @@ async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promi
     if (!lesson) {
       throw new BadRequestException("Lesson not found!")
     }
+
+    await this.checkEnrollment(userId, lesson.courseId);
     
     const [userLesson, created] = await this.userLessonModel.findOrCreate({
       where: {
@@ -312,6 +334,8 @@ async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promi
       startedAt: Date;
     }>;
   }> {
+    await this.checkEnrollment(userId, courseId);
+
     const lessons = await this.findByCourse(courseId);
     const userLessons = await this.userLessonModel.findAll({
       where: {
@@ -353,6 +377,8 @@ async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promi
 
   async startLesson(userId: string, lessonId: string): Promise<UserLesson> {
     const lesson = await this.findOne(lessonId);
+    
+    await this.checkEnrollment(userId, lesson.courseId);
     
     const [userLesson, created] = await this.userLessonModel.findOrCreate({
       where: {

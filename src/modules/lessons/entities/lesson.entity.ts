@@ -24,6 +24,7 @@ export class Lesson extends Model<Lesson> {
   @Column({
     type: DataType.UUID,
     allowNull: false,
+    field: "course_id"
   })
   declare courseId: string;
 
@@ -42,6 +43,7 @@ export class Lesson extends Model<Lesson> {
   @Column({
     type: DataType.STRING,
     allowNull: true,
+    field: "video_url"
   })
   declare videoUrl: string;
 
@@ -50,6 +52,22 @@ export class Lesson extends Model<Lesson> {
     allowNull: false,
   })
   declare position: number;
+
+    @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+    field: 'created_at'
+  })
+  declare createdAt: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+    field: 'updated_at'
+  })
+  declare updatedAt: Date;
 
   @BelongsTo(() => Course, 'courseId')
   declare course: Course;
