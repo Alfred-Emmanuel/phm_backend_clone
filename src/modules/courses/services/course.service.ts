@@ -39,6 +39,10 @@ export class CourseService {
       instructorId,
     );
 
+    if (!createCourseDto) {
+      throw new BadRequestException('Missing course data in request body');
+    }
+
     if (!instructor) {
       throw new NotFoundException('Instructor not found (from token ID)');
     }
