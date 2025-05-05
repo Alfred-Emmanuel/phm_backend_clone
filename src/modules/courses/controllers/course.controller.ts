@@ -73,7 +73,7 @@ export class CourseController {
     return this.courseService.create(createCourseDto, userId);
   }
 
-  @Get()
+  @Get("/get-courses")
   @ApiOperation({ 
     summary: 'Retrieve all courses',
     description: 'Filter courses by category (slug or ID) and/or type (paid/free/other)'
