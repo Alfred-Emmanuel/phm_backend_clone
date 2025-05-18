@@ -48,6 +48,14 @@ export class Lesson extends Model<Lesson> {
   declare videoUrl: string;
 
   @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'video_public_id',
+  })
+  declare videoPublicId: string;
+
+
+  @Column({
     type: DataType.INTEGER,
     allowNull: false,
   })

@@ -13,7 +13,7 @@ import { User } from '../../users/entities/user.entity';
 import { Category } from '../../categories/entities/category.entity';
 import { CourseCategory } from '../../categories/entities/course-category.entity';
 import { Transaction } from 'sequelize';
-import { Op } from 'sequelize';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 import { CategoryType } from '../../categories/entities/category.entity';
 
 interface FindAllOptions {
@@ -26,6 +26,7 @@ export class CourseService {
   constructor(
     @InjectModel(Course)
     private courseModel: typeof Course,
+    private cloudinaryService: CloudinaryService,
     @InjectModel(User)
     private userModel: typeof User,
     @InjectModel(Category)
@@ -34,55 +35,89 @@ export class CourseService {
     private courseCategoryModel: typeof CourseCategory,
   ) {}
 
-  async create(createCourseDto: CreateCourseDto, instructorId: string): Promise<Course> {
-    const instructor = await this.userModel.findByPk(
-      instructorId,
-    );
-
+  async create(
+    createCourseDto: CreateCourseDto,
+    userId: string, // From token
+    featuredImage?: Express.Multer.File,
+  ): Promise<Course> {
+    const user = await this.userModel.findByPk(userId);
+  
     if (!createCourseDto) {
       throw new BadRequestException('Missing course data in request body');
     }
-
-    if (!instructor) {
-      throw new NotFoundException('Instructor not found (from token ID)');
+  
+    if (!user) {
+      throw new NotFoundException('User (from token) not found');
     }
-
-    if (instructor.role !== 'instructor') {
-      throw new BadRequestException('User (from token) is not an instructor');
+  
+    let instructorId: string;
+  
+    if (user.role === 'instructor') {
+      if (user.instructorStatus !== 'approved') {
+        throw new ForbiddenException('Instructor (from token) is not approved');
+      }
+      instructorId = user.id;
+    } else if (user.role === 'admin') {
+      const instructorEmail = createCourseDto.instructorEmail;
+      if (!instructorEmail) {
+        throw new BadRequestException('Instructor email is required for admin-created courses');
+      }
+  
+      const instructor = await this.userModel.findOne({
+        where: { email: instructorEmail, role: 'instructor' },
+      });
+  
+      if (!instructor) {
+        throw new NotFoundException('Instructor with provided email not found');
+      }
+  
+      instructorId = instructor.id;
+    } else {
+      throw new ForbiddenException('Only admins or approved instructors can create courses');
     }
-
-    if (instructor.instructorStatus !== 'approved') {
-      throw new ForbiddenException('Instructor (from token) is not approved');
-    }
-
+  
     // Extract categoryIds from DTO
     const { categoryIds, ...courseData } = createCourseDto;
-
+  
     if (!this.courseModel.sequelize) {
       throw new InternalServerErrorException('Database connection not available');
     }
-
-    // Create course and handle category associations in a transaction
+  
+    if (featuredImage) {
+      try {
+        const uploadResult = await this.cloudinaryService.uploadImage(
+          featuredImage,
+          'phm/course_images'
+        );
+        createCourseDto.featuredImage = uploadResult.secure_url;
+        createCourseDto.imagePublicId = uploadResult.public_id;
+      } catch (error) {
+        console.error('Cloudinary Upload Error:', error);
+        throw new InternalServerErrorException('Image upload failed');
+      }
+    }
+  
     const result = await this.courseModel.sequelize.transaction(async (t: Transaction) => {
-      // Create the course
       const course = await this.courseModel.create(
-        { ...courseData, instructorId } as any,
+        {
+          ...courseData,
+          instructorId,
+          featuredImage: createCourseDto.featuredImage,
+          imagePublicId: createCourseDto.imagePublicId,
+        } as any,
         { transaction: t }
       );
-
-      // If categoryIds are provided, create the associations
+  
       if (categoryIds?.length) {
-        // Verify all categories exist
         const categories = await this.categoryModel.findAll({
           where: { id: categoryIds },
           transaction: t,
         });
-
+  
         if (categories.length !== categoryIds.length) {
           throw new BadRequestException('One or more category IDs are invalid');
         }
-
-        // Create the associations
+  
         await Promise.all(
           categoryIds.map((categoryId) =>
             this.courseCategoryModel.create(
@@ -95,13 +130,13 @@ export class CourseService {
           )
         );
       }
-
-      // Return the created course directly
+  
       return course;
     });
-
+  
     return result;
   }
+  
 
   async findAll(options: FindAllOptions = {}): Promise<Course[]> {
     const { category, type } = options;

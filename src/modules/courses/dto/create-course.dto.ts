@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsArray, IsNumber, IsBoolean, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsUUID, IsArray, IsNumber, IsBoolean, IsEnum, IsEmail } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum CourseLevel {
@@ -69,14 +69,21 @@ export class CreateCourseDto {
   @IsNotEmpty()
   duration: number;
 
+  @IsOptional()
   @ApiProperty({
-    description: 'A url link to an image',
-    example:
-      'img/course-1.png',
+    description: 'The Cloudinary URL for the featured image',
+    example: 'https://res.cloudinary.com/.../course.jpg',
   })
   @IsString()
+  featuredImage?: string;
+  
   @IsOptional()
-  featuredImage: string;
+  @ApiProperty({
+    description: 'The Cloudinary public ID of the uploaded image',
+    example: 'lms/course_images/abc123xyz',
+  })
+  @IsString()
+  imagePublicId?: string;
 
   @ApiProperty({
     description: 'Level of people the course is for',
@@ -122,5 +129,14 @@ export class CreateCourseDto {
   @IsEnum(CourseStatus)
   @IsNotEmpty()
   status: CourseStatus;
+
+  @ApiProperty({
+    description: "Only needed when admin is creating a course on behalf of an instructor",
+    example: "instructor@instructor.com"
+  })
+  @IsOptional()
+  @IsEmail()
+  instructorEmail?: string;
+
 
 }

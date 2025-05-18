@@ -9,7 +9,12 @@ import {
   UseGuards,
   ParseUUIDPipe,
   Request,
+  // UseInterceptors,
+  // UploadedFile
 } from '@nestjs/common';
+// import { FileInterceptor } from '@nestjs/platform-express';
+// import { multerConfig } from 'src/config/multer.config';
+// import { BadRequestException } from '@nestjs/common';
 import { LessonService } from '../services/lesson.service';
 import { CreateLessonDto } from '../dto/create-lesson.dto';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
@@ -45,9 +50,13 @@ export class LessonController {
   @Post(':courseId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
+  // @UseInterceptors(FileInterceptor('videoUrl', multerConfig))
   async create(
     @Param('courseId', new ParseUUIDPipe()) courseId: string, 
-    @Body() createLessonDto: Omit<CreateLessonDto, 'courseId'>): Promise<Lesson>
+    @Body() createLessonDto: Omit<CreateLessonDto, 'courseId'>,
+    // @UploadedFile() videoUrl: Express.Multer.File,
+  ): Promise<Lesson>
+    
   {
     return this.lessonService.create(courseId, {...createLessonDto});
   }

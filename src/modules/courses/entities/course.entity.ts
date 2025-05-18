@@ -92,6 +92,13 @@ export class Course extends Model<Course> {
   declare featuredImage: string;
 
   @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'image_public_id',
+  })
+  declare imagePublicId: string;
+
+  @Column({
     type: DataType.ENUM('beginner', 'intermediate', 'advanced'),
     allowNull: true,
   })

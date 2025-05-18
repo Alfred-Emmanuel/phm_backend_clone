@@ -10,18 +10,20 @@ import { AssignmentModule } from './modules/assignments/assignment.module';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import emailConfig from './config/email.config';
+import cloudinaryConfig from './config/cloudinary.config';
 import appConfig from './config/app.config';
 import { JwtStrategy } from './shared/guards/jwt.strategy';
 import { TokenService } from './shared/services/token.service';
 import { AdminModule } from './modules/admin/admin.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module'
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, emailConfig, appConfig],
+      load: [databaseConfig, jwtConfig, emailConfig, appConfig, cloudinaryConfig],
     }),
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
@@ -31,6 +33,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
       inject: [ConfigService],
     }),
     UserModule,
+    CloudinaryModule,
     CourseModule,
     CourseEnrollmentModule,
     LessonModule,

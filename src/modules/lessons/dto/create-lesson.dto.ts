@@ -33,6 +33,14 @@ export class CreateLessonDto {
   @IsOptional()
   videoUrl?: string;
 
+  @IsOptional()
+  @ApiProperty({
+    description: 'The Cloudinary public ID of the uploaded video',
+    example: 'phm/course_images/abc123xyz',
+  })
+  @IsString()
+  videoPublicId?: string;
+
   @IsInt()
   @Min(0)
   position: number;

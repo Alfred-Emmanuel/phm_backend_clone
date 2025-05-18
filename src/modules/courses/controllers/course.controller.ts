@@ -9,8 +9,11 @@ import {
   UseGuards,
   Query,
   Req,
-  ParseUUIDPipe
+  ParseUUIDPipe,
+  UseInterceptors,
+  UploadedFile
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CourseService } from '../services/course.service';
 import { CreateCourseDto } from '../dto/create-course.dto';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
@@ -18,6 +21,7 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { Course } from '../entities/course.entity';
 import { CategoryType } from '../../categories/entities/category.entity';
+import { BadRequestException } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -28,6 +32,7 @@ import {
   ApiSecurity,
   ApiQuery,
 } from '@nestjs/swagger';
+import { multerConfig } from 'src/config/multer.config';
 import { RequestWithUser } from '../../../shared/interfaces/request.interface';
 
 @ApiTags('courses')
@@ -37,7 +42,8 @@ export class CourseController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('instructor')
+  @Roles('instructor', 'admin')
+  @UseInterceptors(FileInterceptor('featuredImage', multerConfig))
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create a new course (as instructor)',
@@ -68,9 +74,10 @@ export class CourseController {
   async create(
     @Body() createCourseDto: CreateCourseDto,
     @Req() req: RequestWithUser,
+    @UploadedFile() featuredImage: Express.Multer.File,
   ): Promise<Course> {
     const userId = req.user.userId;
-    return this.courseService.create(createCourseDto, userId);
+    return this.courseService.create(createCourseDto, userId, featuredImage);
   }
 
   @Get("/get-courses")

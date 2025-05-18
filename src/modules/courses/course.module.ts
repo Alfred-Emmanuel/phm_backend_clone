@@ -6,10 +6,12 @@ import { CourseService } from './services/course.service';
 import { User } from '../users/entities/user.entity';
 import { Category } from '../categories/entities/category.entity';
 import { CourseCategory } from '../categories/entities/course-category.entity';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Course, User, Category, CourseCategory]),
+    SequelizeModule.forFeature([Course, User, Category, CourseCategory,]),
+    CloudinaryModule,
   ],
   controllers: [CourseController],
   providers: [CourseService],

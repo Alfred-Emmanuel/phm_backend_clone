@@ -11,12 +11,16 @@ import { Course } from '../../courses/entities/course.entity';
 import { UserLesson } from '../entities/user-lesson.entity';
 import { Op, CreationAttributes } from 'sequelize';
 import { CourseEnrollmentService } from '../../course-enrollments/services/course-enrollment.service';
+// import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
+// import { InternalServerErrorException } from '@nestjs/common';
+import {Transaction} from 'sequelize';
 
 @Injectable()
 export class LessonService {
   constructor(
     @InjectModel(Lesson)
     private lessonModel: typeof Lesson,
+    // private cloudinaryService: CloudinaryService,
     @InjectModel(Course)
     private courseModel: typeof Course,
     @InjectModel(UserLesson)
@@ -33,7 +37,7 @@ export class LessonService {
     }
   }
 
-  async create(courseId: string, createLessonDto: Partial<CreateLessonDto>): Promise<Lesson> {
+  async create(courseId: string, createLessonDto: Partial<CreateLessonDto>, videoUrl?: Express.Multer.File): Promise<Lesson> {
     const course = await this.courseModel.findByPk(courseId);
     if (!course) {
       throw new NotFoundException('Course not found');
@@ -72,22 +76,43 @@ export class LessonService {
     // Auto-assign title if not provided
     const title = createLessonDto.title?.trim() || `Lesson ${position + 1}`;
 
+    // if (videoUrl) {
+    //   try {
+    //     const uploadResult = await this.cloudinaryService.uploadVideo(
+    //       videoUrl,
+    //       'phm/lesson_videos'
+    //     );
+    //     createLessonDto.videoUrl = uploadResult.secure_url;
+    //     createLessonDto.videoPublicId = uploadResult.public_id;
+    //   } catch (error) {
+    //     console.error('Cloudinary Upload Error:', error);
+    //     throw new InternalServerErrorException('Image upload failed');
+    //   }
+    // }  
+
     // Create the new lesson
-    const newLesson = await this.lessonModel.create({
-      ...createLessonDto,
-      courseId,
-      position,
-      title,
-    } as any);
+    const result = await this.lessonModel.sequelize?.transaction(async (t: Transaction) => {
+      const newLesson = await this.lessonModel.create({
+        ...createLessonDto,
+        courseId,
+        position,
+        title,
+        // videoUrl: createLessonDto.videoUrl, 
+        // videoPublicId: createLessonDto.videoPublicId
+      } as any,
+      { transaction: t }
+      );
 
-    // After creating the lesson, update the maxPosition for the course
-    // Only update if the new position is greater than the current maxPosition
-    console.log('position:', position, 'course.maxPosition:', course.maxPosition);
-    if (position > (course.maxPosition ?? -1)) {
-      await course.update({ maxPosition: position });
-    }
+  
+      // After creating the lesson, update the maxPosition for the course
+      // Only update if the new position is greater than the current maxPosition
+      if (position > (course.maxPosition ?? -1)) {
+        await course.update({ maxPosition: position });
+      }
+      return newLesson
+    })
 
-    return newLesson;
+    return result!;
   }
 
   async findAll(): Promise<Lesson[]> {
