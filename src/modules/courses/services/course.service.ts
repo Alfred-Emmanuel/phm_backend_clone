@@ -213,6 +213,10 @@ export class CourseService {
     if (course.instructorId !== currentUserId) {
       throw new ForbiddenException('Only the course instructor can update this course');
     }
+    
+    if (!updateCourseDto) {
+      throw new BadRequestException('Request body is missing.');
+    }
 
     // Extract categoryIds from DTO
     const { categoryIds, ...courseData } = updateCourseDto;
