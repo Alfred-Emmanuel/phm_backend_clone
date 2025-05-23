@@ -1,7 +1,7 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
+  // BadRequestException,
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
