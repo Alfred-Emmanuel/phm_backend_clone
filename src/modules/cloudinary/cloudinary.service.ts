@@ -45,7 +45,21 @@ export class CloudinaryService {
       // cloudinary.uploader.upload(file.path, { folder: folderName, resource_type: 'image' }, (error, result) => {...});
     });
   }
-
+  
+  async deleteAsset(publicId: string, resourceType: 'image' | 'video' | 'raw' = 'image'): Promise<any> {
+    this.logger.log(`Deleting asset from Cloudinary: ${publicId}, type: ${resourceType}`);
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.destroy(publicId, { resource_type: resourceType }, (error, result) => {
+        if (error) {
+          this.logger.error(`Failed to delete asset ${publicId}:`, error);
+          return reject(new InternalServerErrorException(`Failed to delete ${resourceType}.`));
+        }
+        this.logger.log(`Asset ${publicId} deleted successfully:`, result);
+        resolve(result);
+      });
+    });
+  }
+  
   async uploadVideo(
     file: Express.Multer.File,
     folderName: string = 'lms/lesson_videos',
@@ -82,17 +96,4 @@ export class CloudinaryService {
     });
   }
 
-  async deleteAsset(publicId: string, resourceType: 'image' | 'video' | 'raw' = 'image'): Promise<any> {
-    this.logger.log(`Deleting asset from Cloudinary: ${publicId}, type: ${resourceType}`);
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader.destroy(publicId, { resource_type: resourceType }, (error, result) => {
-        if (error) {
-          this.logger.error(`Failed to delete asset ${publicId}:`, error);
-          return reject(new InternalServerErrorException(`Failed to delete ${resourceType}.`));
-        }
-        this.logger.log(`Asset ${publicId} deleted successfully:`, result);
-        resolve(result);
-      });
-    });
-  }
 }

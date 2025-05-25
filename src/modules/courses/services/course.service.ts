@@ -206,49 +206,80 @@ export class CourseService {
     id: string,
     updateCourseDto: UpdateCourseDto,
     currentUserId: string,
+    featuredImage?: Express.Multer.File,
   ): Promise<Course> {
     const course = await this.findOne(id);
-
+  
     // Check if current user is the course instructor
     if (course.instructorId !== currentUserId) {
       throw new ForbiddenException('Only the course instructor can update this course');
     }
-    
+  
     if (!updateCourseDto) {
       throw new BadRequestException('Request body is missing.');
     }
-
-    // Extract categoryIds from DTO
+  
     const { categoryIds, ...courseData } = updateCourseDto;
-
+  
     if (!this.courseModel.sequelize) {
       throw new InternalServerErrorException('Database connection not available');
     }
-
-    // Update course and handle category associations in a transaction
+  
     const result = await this.courseModel.sequelize.transaction(async (t: Transaction) => {
-      // Update the course data
+      // Handle image update
+      if (featuredImage) {
+        // Delete the old image if it exists
+        if (course.imagePublicId) {
+          try {
+            const deletionResult = await this.cloudinaryService.deleteAsset(course.imagePublicId);
+            // if (deletionResult.result !== 'ok') {
+            //   console.warn(`Cloudinary deletion failed or image not found: ${JSON.stringify(deletionResult)}`);
+            // }
+          } catch (deleteError) {
+            // console.error(
+            //   `Failed to delete old image with publicId: ${course.imagePublicId}`,
+            //   deleteError
+            // );
+            throw new InternalServerErrorException(
+              `Failed to delete old image with publicId: ${course.imagePublicId}`
+            );
+          }
+        }
+        
+  
+        // Upload new image
+        try {
+          const uploadResult = await this.cloudinaryService.uploadImage(
+            featuredImage,
+            'phm/course_images'
+          );
+          courseData.featuredImage = uploadResult.secure_url;
+          courseData.imagePublicId = uploadResult.public_id;
+        } catch (uploadError) {
+          // this.logger.error('Image upload failed', uploadError);
+          throw new InternalServerErrorException('Image upload failed');
+        }
+      }
+  
+      // Update the course
       await course.update(courseData, { transaction: t });
-
+  
       // If categoryIds are provided, update the associations
       if (categoryIds !== undefined) {
-        // Verify all categories exist
         const categories = await this.categoryModel.findAll({
           where: { id: categoryIds },
           transaction: t,
         });
-
+  
         if (categories.length !== categoryIds.length) {
           throw new BadRequestException('One or more category IDs are invalid');
         }
-
-        // Remove existing associations
+  
         await this.courseCategoryModel.destroy({
           where: { courseId: id },
           transaction: t,
         });
-
-        // Create new associations
+  
         if (categoryIds.length > 0) {
           await Promise.all(
             categoryIds.map((categoryId) =>
@@ -263,13 +294,13 @@ export class CourseService {
           );
         }
       }
-
-      // Return the updated course with its categories
+  
       return this.findOne(id);
     });
-
+  
     return result;
   }
+  
 
   async remove(id: string): Promise<void> {
     const course = await this.findOne(id);

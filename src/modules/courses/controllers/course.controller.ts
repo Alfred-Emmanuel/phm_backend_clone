@@ -147,6 +147,7 @@ export class CourseController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
+  @UseInterceptors(FileInterceptor('featuredImage', multerConfig))
   @ApiBearerAuth()
   @ApiOperation({ 
     summary: 'Update a course by ID',
@@ -180,10 +181,11 @@ export class CourseController {
   @ApiResponse({ status: 404, description: 'Course not found.' })
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() updateCourseDto: Partial<CreateCourseDto>,
+    @Body() updateCourseDto: any, // 👈 Will be parsed from FormData
+    @UploadedFile() featuredImage: Express.Multer.File,
     @Req() req: RequestWithUser,
   ): Promise<Course> {
-    return this.courseService.update(id, updateCourseDto, req.user.userId);
+    return this.courseService.update(id, updateCourseDto, req.user.userId, featuredImage);
   }
 
   @Delete(':id')

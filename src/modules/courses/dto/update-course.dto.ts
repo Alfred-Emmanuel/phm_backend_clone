@@ -68,6 +68,14 @@ export class UpdateCourseDto {
   @IsOptional()
   featuredImage?: string;
 
+  @IsOptional()
+  @ApiProperty({
+    description: 'The Cloudinary public ID of the uploaded image',
+    example: 'lms/course_images/abc123xyz',
+  })
+  @IsString()
+  imagePublicId?: string;
+
   @ApiProperty({
     description: 'Level of people the course is for',
     example: 'Beginner',
