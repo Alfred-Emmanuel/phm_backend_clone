@@ -356,9 +356,9 @@ export class UserService {
   async update(id: string, updateDto: Partial<CreateUserDto>): Promise<User> {
     const user = await this.findOne(id);
 
-    if (updateDto.password) {
-      const hashedPassword = await bcrypt.hash(updateDto.password, 10);
-      updateDto = { ...updateDto, password: hashedPassword };
+    // Prevent password updates through this method
+    if ('password' in updateDto) {
+      delete updateDto.password;
     }
 
     await user.update(updateDto);
@@ -486,5 +486,45 @@ export class UserService {
 
     // Clear the stored refresh token
     await user.update({ hashedRefreshToken: null });
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.userModel.findOne({ where: { email } });
+    if (!user) {
+      // For security, do not reveal if the email exists
+      return;
+    }
+    const resetToken = this.verificationTokenService.generateToken();
+    const resetExpires = this.verificationTokenService.getExpirationDate();
+    await user.update({
+      passwordResetToken: resetToken,
+      passwordResetExpires: resetExpires,
+    });
+    await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+  }
+  
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    if (!token || typeof token !== 'string' || !token.trim()) {
+      throw new BadRequestException('Password reset token is required');
+    }
+    if (!newPassword || typeof newPassword !== 'string' || !newPassword.trim()) {
+      throw new BadRequestException('New password is required');
+    }
+    console.log('Token received for password reset:', token);
+    const user = await this.userModel.findOne({
+      where: {
+        passwordResetToken: token,
+        passwordResetExpires: { [Op.gt]: new Date() },
+      },
+    });
+    if (!user) {
+      throw new BadRequestException('Invalid or expired password reset token');
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await user.update({
+      password: hashedPassword,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    });
   }
 }

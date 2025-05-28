@@ -106,6 +106,28 @@ export class UserController {
     };
   }
 
+  @Post('request-password-reset')
+  @ApiOperation({ summary: 'Request password reset', description: 'Sends a password reset email to the user if the email exists.' })
+  @ApiResponse({ status: 200, description: 'If the email exists, a password reset email will be sent.' })
+  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', format: 'email' } } } })
+  async requestPasswordReset(@Body('email') email: string) {
+    await this.userService.requestPasswordReset(email);
+    return { message: 'If the email exists, a password reset email will be sent.' };
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password', description: 'Resets the user password using a valid reset token passed as a query parameter.' })
+  @ApiResponse({ status: 200, description: 'Password reset successful.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired password reset token.' })
+  @ApiBody({ schema: { type: 'object', properties: { newPassword: { type: 'string', minLength: 6 } } } })
+  async resetPassword(
+    @Query('token') token: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    await this.userService.resetPassword(token, newPassword);
+    return { message: 'Password reset successful.' };
+  }
+
   @Get('verify-email')
   @ApiOperation({ summary: 'Verify user email' })
   @ApiResponse({ status: 200, description: 'Email verified successfully' })

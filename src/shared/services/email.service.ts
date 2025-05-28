@@ -72,4 +72,45 @@ export class EmailService {
       throw new Error('Failed to send verification email');
     }
   }
+
+  // ...existing code...
+
+  async sendPasswordResetEmail(email: string, token: string): Promise<void> {
+    try {
+      const appUrl = this.configService.get<string>('app.url');
+      if (!appUrl) {
+        throw new Error('Application URL is not configured');
+      }
+
+      const resetUrl = `${appUrl}/users/reset-password?token=${token}`;
+      const from = this.configService.get<string>('email.from');
+
+      if (!from) {
+        throw new Error('Email sender address is not configured');
+      }
+
+      await this.transporter.sendMail({
+        from,
+        to: email,
+        subject: 'Reset your password',
+        html: `
+          <h1>Password Reset</h1>
+          <p>You requested a password reset. Click the link below to set a new password:</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+          <p>If you did not request this, you can ignore this email.</p>
+          <p>This link will expire in 24 hours.</p>
+        `,
+      });
+
+      this.logger.log(`Password reset email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password reset email to ${email}:`,
+        error,
+      );
+      throw new Error('Failed to send password reset email');
+    }
+  }
+
+// ...existing code...
 }

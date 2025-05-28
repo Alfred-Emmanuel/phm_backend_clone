@@ -191,6 +191,20 @@ export class User extends Model<User> {
   @HasMany(() => AdminActionLog, 'admin_user_id')
   declare adminActionLogs: AdminActionLog[];
 
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'password_reset_token',
+  })
+  declare passwordResetToken: string | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    field: 'password_reset_expires',
+  })
+  declare passwordResetExpires: Date | null;
+
   // Timestamps
   @Column({ field: 'created_at' })
   declare createdAt: Date;
