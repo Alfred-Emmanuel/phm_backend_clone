@@ -210,9 +210,13 @@ export class CourseService {
   ): Promise<Course> {
     const course = await this.findOne(id);
   
-    // Check if current user is the course instructor
-    if (course.instructorId !== currentUserId) {
-      throw new ForbiddenException('Only the course instructor can update this course');
+    // Check if current user is the course instructor OR an admin
+    const user = await this.userModel.findByPk(currentUserId);
+    if (!user) {
+      throw new ForbiddenException('User not found');
+    }
+    if (course.instructorId !== currentUserId && user.role !== 'admin') {
+      throw new ForbiddenException('Only the course instructor or an admin can update this course');
     }
   
     if (!updateCourseDto) {
