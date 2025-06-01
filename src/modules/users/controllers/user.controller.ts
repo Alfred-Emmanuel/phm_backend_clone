@@ -361,26 +361,4 @@ export class UserController {
     return { message: 'Logout successful' };
   }
 
-  @Post(':id/admin-reset-password')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: "Admin reset user's password",
-    description:
-      'Allows an admin to directly reset a user password without email or token. Requires JWT authentication and admin role.',
-  })
-  @ApiResponse({ status: 200, description: 'Password reset successful.' })
-  @ApiResponse({ status: 400, description: 'User not found or bad request.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiBody({ schema: { type: 'object', properties: { newPassword: { type: 'string', minLength: 6 } } } })
-  async adminResetUserPassword(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Body('newPassword') newPassword: string,
-    @Request() req: any,
-  ) {
-    await this.userService.adminResetUserPassword(req.user.userId, id, newPassword);
-    return { message: 'Password reset successful.' };
-  }
 }

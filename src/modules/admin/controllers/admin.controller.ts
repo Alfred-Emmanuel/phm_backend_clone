@@ -9,6 +9,7 @@ import {
   Req,
   Delete,
   Query,
+  Request,
   ParseUUIDPipe
 } from '@nestjs/common';
 import { AdminService } from '../services/admin.service';
@@ -26,6 +27,8 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiUnauthorizedResponse,
+  ApiBody
 } from '@nestjs/swagger';
 import { RequestWithUser } from '../../../shared/interfaces/request.interface';
 import { FilterUsersDto } from '../dto/filter-users.dto';
@@ -229,5 +232,26 @@ export class AdminController {
     @Req() req: RequestWithUser,
   ): Promise<void> {
     return this.adminService.deleteEnrollment(enrollmentId, req.user.userId);
+  }
+
+  @Post(':id/admin-reset-password')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: "Admin reset user's password",
+    description:
+      'Allows an admin to directly reset a user password without email or token. Requires JWT authentication and admin role.',
+  })
+  @ApiResponse({ status: 200, description: 'Password reset successful.' })
+  @ApiResponse({ status: 400, description: 'User not found or bad request.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiBody({ schema: { type: 'object', properties: { newPassword: { type: 'string', minLength: 6 } } } })
+  async adminResetUserPassword(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body('newPassword') newPassword: string,
+    @Request() req: any,
+  ) {
+    await this.adminService.adminResetUserPassword(req.user.userId, id, newPassword);
+    return { message: 'Password reset successful.' };
   }
 } 

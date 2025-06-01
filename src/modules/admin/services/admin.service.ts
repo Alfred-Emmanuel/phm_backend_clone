@@ -2,7 +2,9 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException
 } from '@nestjs/common';
+import * as bcrypt from "bcrypt"
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { User } from '../../users/entities/user.entity';
@@ -519,4 +521,38 @@ export class AdminService {
     await course.update(updateData);
     return course;
   }
+
+    /**
+   * Allows an admin to directly reset a user's password without email/token.
+   * @param adminId The ID of the admin performing the reset
+   * @param userId The ID of the user whose password is being reset
+   * @param newPassword The new password to set
+   */
+    async adminResetUserPassword(adminId: string, userId: string, newPassword: string): Promise<void> {
+      // Check if adminId belongs to an admin
+      const admin = await this.userModel.findByPk(adminId);
+      if (!admin || admin.role !== 'admin') {
+        throw new ForbiddenException('Only admins can reset user passwords');
+      }
+      // Find the user to reset
+      const user = await this.userModel.findByPk(userId);
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+      if (!newPassword || typeof newPassword !== 'string' || !newPassword.trim()) {
+        throw new BadRequestException('New password is required');
+      }
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Log the action
+      await this.logAction(adminId, 'update_user', 'user', userId, {
+        // newData: updateData,
+      });
+
+      await user.update({
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      });
+    }
 } 
