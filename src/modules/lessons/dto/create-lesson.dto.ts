@@ -29,15 +29,21 @@ export class CreateLessonDto {
   @IsOptional()
   content?: string;
 
-  @IsUrl()
+  @IsOptional()
+  @ApiProperty({
+    description: 'The embed link of the video',
+    example: '<iframe width="560" height="315" src="https://www.youtube.com/embed/4U7xrr_tJTs?si=R0AWuYbCtQhWq42L" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
+  })
+  // @IsUrl()
+  @IsString()
   @IsOptional()
   videoUrl?: string;
 
-  @IsOptional()
-  @ApiProperty({
-    description: 'The Cloudinary public ID of the uploaded video',
-    example: 'phm/course_images/abc123xyz',
-  })
+  // @IsOptional()
+  // @ApiProperty({
+  //   description: 'The Cloudinary public ID of the uploaded video',
+  //   example: 'phm/course_images/abc123xyz',
+  // })
   @IsString()
   videoPublicId?: string;
 

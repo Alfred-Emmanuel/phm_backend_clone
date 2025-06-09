@@ -356,9 +356,13 @@ export class UserService {
   async update(id: string, updateDto: Partial<CreateUserDto>): Promise<User> {
     const user = await this.findOne(id);
 
-    // Prevent password updates through this method
+    // Prevent password and role updates through this method
     if ('password' in updateDto) {
       delete updateDto.password;
+    }
+    if ('role' in updateDto) {
+      delete updateDto.role;
+      throw new ForbiddenException('Role change action is forbidden')
     }
 
     await user.update(updateDto);
