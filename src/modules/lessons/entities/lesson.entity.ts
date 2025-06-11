@@ -41,7 +41,7 @@ export class Lesson extends Model<Lesson> {
   declare content: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
     allowNull: true,
     field: "video_url"
   })
