@@ -11,6 +11,8 @@ import {
   Request,
   ParseUUIDPipe,
   Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { UserService } from '../services/user.service';
@@ -32,6 +34,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Users')
 @Controller('users')
@@ -39,6 +42,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post('signup/student')
+  @UseInterceptors(FileInterceptor('userImage'))
   @ApiOperation({ summary: 'Register a new student' })
   @ApiResponse({
     status: 201,
@@ -48,11 +52,15 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   @ApiBody({ type: CreateStudentDto })
-  async signupStudent(@Body() createStudentDto: CreateStudentDto) {
-    return this.userService.signupStudent(createStudentDto);
+  async signupStudent(
+    @Body() createStudentDto: CreateStudentDto,
+    @UploadedFile() userImage?: Express.Multer.File,
+  ) {
+    return this.userService.signupStudent(createStudentDto, userImage);
   }
 
   @Post('signup/instructor')
+  @UseInterceptors(FileInterceptor('userImage'))
   @ApiOperation({ summary: 'Register a new instructor' })
   @ApiResponse({
     status: 201,
@@ -62,8 +70,11 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   @ApiBody({ type: CreateInstructorDto })
-  async signupInstructor(@Body() createInstructorDto: CreateInstructorDto) {
-    return this.userService.signupInstructor(createInstructorDto);
+  async signupInstructor(
+    @Body() createInstructorDto: CreateInstructorDto,
+    @UploadedFile() userImage?: Express.Multer.File,
+  ) {
+    return this.userService.signupInstructor(createInstructorDto, userImage);
   }
 
   @Post('login')
@@ -245,53 +256,6 @@ export class UserController {
     );
   }
 
-  @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Update user',
-    description:
-      'Requires JWT authentication. Send with Bearer token in Authorization header.',
-  })
-  @ApiResponse({ status: 200, description: 'User updated', type: User })
-  @ApiResponse({ status: 400, description: 'User not found' })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  @ApiBody({ type: CreateUserDto })
-  async update(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() updateDto: Partial<CreateUserDto>,
-  ): Promise<User> {
-    return this.userService.update(id, updateDto);
-  }
-
-  @Get('email/:email')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Get user by email',
-    description:
-      'Requires JWT authentication and admin role. Only admins can look up user details.',
-  })
-  @ApiResponse({ status: 200, description: 'User found', type: User })
-  @ApiResponse({ status: 400, description: 'User not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  async findByEmail(
-    @Param('email', new ParseUUIDPipe()) email: string,
-    @Request() req: any,
-  ): Promise<User> {
-    return this.userService.findByEmail(
-      email,
-      req.user.userId,
-      req.user.role,
-    );
-  }
-
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({
@@ -361,4 +325,52 @@ export class UserController {
     return { message: 'Logout successful' };
   }
 
+  @Put(':id')
+  @UseInterceptors(FileInterceptor('userImage'))
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Update user',
+    description:
+      'Requires JWT authentication. Send with Bearer token in Authorization header.',
+  })
+  @ApiResponse({ status: 200, description: 'User updated', type: User })
+  @ApiResponse({ status: 400, description: 'User not found' })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiBody({ type: CreateUserDto })
+  async update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateDto: Partial<CreateUserDto>,
+    @UploadedFile() userImage?: Express.Multer.File,
+  ): Promise<User> {
+    return this.userService.update(id, updateDto, userImage);
+  }
+
+  @Get('email/:email')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get user by email',
+    description:
+      'Requires JWT authentication and admin role. Only admins can look up user details.',
+  })
+  @ApiResponse({ status: 200, description: 'User found', type: User })
+  @ApiResponse({ status: 400, description: 'User not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async findByEmail(
+    @Param('email', new ParseUUIDPipe()) email: string,
+    @Request() req: any,
+  ): Promise<User> {
+    return this.userService.findByEmail(
+      email,
+      req.user.userId,
+      req.user.role,
+    );
+  }
 }

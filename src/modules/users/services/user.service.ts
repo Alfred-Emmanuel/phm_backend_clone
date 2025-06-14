@@ -20,6 +20,7 @@ import { IJwtData } from '../../../shared/interfaces/jwt.interface';
 import { Op, CreationAttributes } from 'sequelize';
 import { UniqueConstraintError } from 'sequelize';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
+import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 
 @Injectable()
 export class UserService {
@@ -29,13 +30,21 @@ export class UserService {
     private tokenService: TokenService,
     private emailService: EmailService,
     private verificationTokenService: VerificationTokenService,
+    private cloudinaryService: CloudinaryService, // Inject CloudinaryService
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto, userImageFile?: Express.Multer.File): Promise<User> {
     const transaction = await this.userModel.sequelize!.transaction();
     let user: User;
 
     try {
+      let userImageUrl: string | undefined;
+      let userImagePublicId: string | undefined;
+      if (userImageFile) {
+        const uploadResult = await this.cloudinaryService.uploadImage(userImageFile, 'users/user-image');
+        userImageUrl = (uploadResult as any).secure_url;
+        userImagePublicId = (uploadResult as any).public_id;
+      }
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
       const verificationToken = this.verificationTokenService.generateToken();
       const verificationExpires =
@@ -47,6 +56,8 @@ export class UserService {
           password: hashedPassword,
           emailVerificationToken: verificationToken,
           emailVerificationExpires: verificationExpires,
+          userImage: userImageUrl,
+          userImagePublicId: userImagePublicId,
         } as CreationAttributes<User>,
         { transaction },
       );
@@ -191,11 +202,18 @@ export class UserService {
     );
   }
 
-  async signupStudent(createStudentDto: CreateStudentDto): Promise<User> {
+  async signupStudent(createStudentDto: CreateStudentDto, userImageFile?: Express.Multer.File): Promise<User> {
     const transaction = await this.userModel.sequelize!.transaction();
     let user: User;
 
     try {
+      let userImageUrl: string | undefined;
+      let userImagePublicId: string | undefined;
+      if (userImageFile) {
+        const uploadResult = await this.cloudinaryService.uploadImage(userImageFile, 'users/user-image');
+        userImageUrl = (uploadResult as any).secure_url;
+        userImagePublicId = (uploadResult as any).public_id;
+      }
       const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
       const verificationToken = this.verificationTokenService.generateToken();
       const verificationExpires =
@@ -208,6 +226,8 @@ export class UserService {
           role: 'student',
           emailVerificationToken: verificationToken,
           emailVerificationExpires: verificationExpires,
+          userImage: userImageUrl,
+          userImagePublicId: userImagePublicId,
         } as CreationAttributes<User>,
         { transaction },
       );
@@ -230,11 +250,19 @@ export class UserService {
 
   async signupInstructor(
     createInstructorDto: CreateInstructorDto,
+    userImageFile?: Express.Multer.File,
   ): Promise<User> {
     const transaction = await this.userModel.sequelize!.transaction();
     let user: User;
 
     try {
+      let userImageUrl: string | undefined;
+      let userImagePublicId: string | undefined;
+      if (userImageFile) {
+        const uploadResult = await this.cloudinaryService.uploadImage(userImageFile, 'users/user-image');
+        userImageUrl = (uploadResult as any).secure_url;
+        userImagePublicId = (uploadResult as any).public_id;
+      }
       const hashedPassword = await bcrypt.hash(
         createInstructorDto.password,
         10,
@@ -251,6 +279,8 @@ export class UserService {
           instructorStatus: 'pending',
           emailVerificationToken: verificationToken,
           emailVerificationExpires: verificationExpires,
+          userImage: userImageUrl,
+          userImagePublicId: userImagePublicId,
         } as CreationAttributes<User>,
         { transaction },
       );
@@ -353,7 +383,7 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, updateDto: Partial<CreateUserDto>): Promise<User> {
+  async update(id: string, updateDto: Partial<CreateUserDto>, userImageFile?: Express.Multer.File): Promise<User> {
     const user = await this.findOne(id);
 
     // Prevent password and role updates through this method
@@ -362,7 +392,17 @@ export class UserService {
     }
     if ('role' in updateDto) {
       delete updateDto.role;
-      throw new ForbiddenException('Role change action is forbidden')
+    }
+
+    // Handle user image update
+    if (userImageFile) {
+      // Delete old image from Cloudinary if it exists
+      if (user.userImagePublicId) {
+        await this.cloudinaryService.deleteAsset(user.userImagePublicId, 'image');
+      }
+      const uploadResult = await this.cloudinaryService.uploadImage(userImageFile, 'users/user-image');
+      (updateDto as any).userImage = (uploadResult as any).secure_url;
+      (updateDto as any).userImagePublicId = (uploadResult as any).public_id;
     }
 
     await user.update(updateDto);

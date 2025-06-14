@@ -205,6 +205,20 @@ export class User extends Model<User> {
   })
   declare passwordResetExpires: Date | null;
 
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'user_image',
+  })
+  declare userImage: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'user_image_public_id',
+  })
+  declare userImagePublicId: string;
+
   // Timestamps
   @Column({ field: 'created_at' })
   declare createdAt: Date;
