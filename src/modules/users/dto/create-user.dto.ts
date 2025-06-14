@@ -106,4 +106,14 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   others?: string;
+
+  @ApiProperty({
+    description:
+      'Upload user images',
+    example: 'Select an image of yourself and upload it',
+    required: true,
+  })
+  @IsString()
+  // @IsOptional()
+  userImage?: string;
 }
