@@ -54,14 +54,13 @@ export class Lesson extends Model<Lesson> {
   })
   declare videoPublicId: string;
 
-
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
   })
   declare position: number;
 
-    @Column({
+  @Column({
     type: DataType.DATE,
     allowNull: false,
     defaultValue: DataType.NOW,
@@ -76,6 +75,13 @@ export class Lesson extends Model<Lesson> {
     field: 'updated_at'
   })
   declare updatedAt: Date;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'section_title',
+  })
+  declare sectionTitle: string;
 
   @BelongsTo(() => Course, 'courseId')
   declare course: Course;

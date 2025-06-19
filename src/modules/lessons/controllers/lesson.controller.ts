@@ -237,4 +237,19 @@ export class LessonController {
   ): Promise<UserLesson> {
     return this.lessonService.startLesson(req.user.userId, id);
   }
+
+  @Get('course/:courseId/grouped')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get lessons grouped by section title for a course' })
+  @ApiResponse({ status: 200, description: 'Lessons grouped by section', type: Object })
+  async findByCourseGrouped(@Param('courseId', new ParseUUIDPipe()) courseId: string) {
+    return this.lessonService.findByCourseGrouped(courseId);
+  }
+
+  @Get('course/:courseId/sections')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all allowed section titles for a course' })
+  async getSectionTitles(@Param('courseId', new ParseUUIDPipe()) courseId: string) {
+    return this.lessonService.getAllowedSectionTitles(courseId);
+  }
 }

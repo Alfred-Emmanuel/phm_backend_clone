@@ -16,7 +16,8 @@ import { JwtStrategy } from './shared/guards/jwt.strategy';
 import { TokenService } from './shared/services/token.service';
 import { AdminModule } from './modules/admin/admin.module';
 import { CategoriesModule } from './modules/categories/categories.module';
-import { CloudinaryModule } from './modules/cloudinary/cloudinary.module'
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { QuizzesModule } from './modules/quizzes/quizzes.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module'
     AssignmentModule,
     AdminModule,
     CategoriesModule,
+    QuizzesModule,
   ],
   providers: [JwtStrategy, TokenService],
 })

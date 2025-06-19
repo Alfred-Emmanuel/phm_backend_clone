@@ -50,4 +50,12 @@ export class CreateLessonDto {
   @IsInt()
   @Min(0)
   position: number;
+
+  @ApiProperty({
+    description: 'Section title for grouping lessons (e.g., Introduction, Chapter 1, Chapter 2, ...)',
+    example: 'Introduction',
+    required: true,
+  })
+  @IsString()
+  sectionTitle: string;
 }

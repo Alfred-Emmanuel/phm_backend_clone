@@ -37,11 +37,45 @@ export class LessonService {
     }
   }
 
+  /**
+   * Returns allowed section titles for a course: always 'Introduction' first, then 'Chapter 1', 'Chapter 2', ...
+   */
+  async getAllowedSectionTitles(courseId: string): Promise<string[]> {
+    const lessons = await this.lessonModel.findAll({
+      where: { courseId },
+      attributes: ['sectionTitle'],
+      group: ['sectionTitle'],
+      order: [['sectionTitle', 'ASC']],
+    });
+    const existingSections = lessons.map(l => l.sectionTitle).filter(Boolean);
+    // Always include 'Introduction' at the top, even if it doesn't exist yet
+    const allowedSections: string[] = ['Introduction'];
+    // Find max chapter number
+    const chapterNumbers = existingSections
+      .filter(s => /^Chapter \d+$/i.test(s))
+      .map(s => parseInt(s.replace(/Chapter /i, ''), 10))
+      .filter(n => !isNaN(n));
+    const nextChapter = chapterNumbers.length > 0 ? Math.max(...chapterNumbers) + 1 : 1;
+    // Add all existing sections except Introduction (to avoid duplicate)
+    allowedSections.push(...existingSections.filter(s => s !== 'Introduction'));
+    // Add the next chapter if not already present
+    const nextChapterTitle = `Chapter ${nextChapter}`;
+    if (!allowedSections.includes(nextChapterTitle)) {
+      allowedSections.push(nextChapterTitle);
+    }
+    return allowedSections;
+  }
+
   async create(courseId: string, createLessonDto: Partial<CreateLessonDto>, videoUrl?: Express.Multer.File): Promise<Lesson> {
     const course = await this.courseModel.findByPk(courseId);
     if (!course) {
       throw new NotFoundException('Course not found');
     }
+    // Remove strict sectionTitle validation, allow any string
+    if (!createLessonDto.sectionTitle || typeof createLessonDto.sectionTitle !== 'string' || !createLessonDto.sectionTitle.trim()) {
+      throw new BadRequestException('sectionTitle is required and must be a non-empty string');
+    }
+    const sectionTitle = createLessonDto.sectionTitle.trim();
 
     // Auto-assign position if not provided
     let position = createLessonDto.position;
@@ -228,6 +262,24 @@ export class LessonService {
       where: { courseId },
       order: [['position', 'ASC']],
     });
+  }
+
+  /**
+   * Returns lessons grouped by sectionTitle for a course
+   */
+  async findByCourseGrouped(courseId: string): Promise<{ sectionTitle: string, lessons: Lesson[] }[]> {
+    const lessons = await this.lessonModel.findAll({
+      where: { courseId },
+      order: [['position', 'ASC']],
+    });
+    // Group by sectionTitle
+    const grouped: Record<string, Lesson[]> = {};
+    for (const lesson of lessons) {
+      const section = lesson.sectionTitle || 'Uncategorized';
+      if (!grouped[section]) grouped[section] = [];
+      grouped[section].push(lesson);
+    }
+    return Object.entries(grouped).map(([sectionTitle, lessons]) => ({ sectionTitle, lessons }));
   }
 
   async reorderLessons(courseId: string, lessonIds: string[]): Promise<void> {
