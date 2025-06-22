@@ -31,10 +31,14 @@ export class PaymentStatusJobService {
         );
         const status = response.data.data.status;
         if (status === 'success' || status === 'paid') {
-          // Mark as paid and enroll user
-          payment.status = 'paid';
-          await payment.save();
-          await this.courseEnrollmentService.enrollAfterPayment(payment.userId, payment.courseId);
+          if (payment.status !== 'paid') {
+            payment.status = 'paid';
+            await payment.save();
+            const alreadyEnrolled = await this.courseEnrollmentService.isUserEnrolled(payment.userId, payment.courseId);
+            if (!alreadyEnrolled) {
+              await this.courseEnrollmentService.enrollAfterPayment(payment.userId, payment.courseId);
+            }
+          }
         } else if (status === 'failed' || status === 'abandoned') {
           payment.status = 'failed';
           await payment.save();

@@ -169,4 +169,11 @@ export class CourseEnrollmentService {
     await enrollment.update(updateDto);
     return enrollment;
   }
+
+  async isUserEnrolled(userId: string, courseId: string): Promise<boolean> {
+    const existingEnrollment = await this.enrollmentModel.findOne({
+      where: { userId, courseId },
+    });
+    return !!existingEnrollment;
+  }
 }
