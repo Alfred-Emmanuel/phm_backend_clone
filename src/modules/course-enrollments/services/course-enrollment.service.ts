@@ -64,7 +64,7 @@ export class CourseEnrollmentService {
         // Paid course: initiate payment, do not enroll yet
         const payment = await this.paymentsService.initiatePayment({
           userId: createEnrollmentDto.userId,
-          courseId: createEnrollmentDto.courseId,
+          courseIds: [createEnrollmentDto.courseId],
           amount: course.price,
         });
         // Rollback transaction so nothing is saved until payment is verified
@@ -175,5 +175,51 @@ export class CourseEnrollmentService {
       where: { userId, courseId },
     });
     return !!existingEnrollment;
+  }
+
+  async bulkEnroll(userId: string, courseIds: string[]): Promise<any> {
+    // Fetch all courses
+    const courses = await this.courseModel.findAll({ where: { id: courseIds } });
+    if (courses.length !== courseIds.length) {
+      throw new NotFoundException('One or more courses not found');
+    }
+    // Check if user exists
+    const user = await this.userModel.findByPk(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    // Check for already enrolled courses
+    const alreadyEnrolled = await this.enrollmentModel.findAll({
+      where: { userId, courseId: courseIds },
+    });
+    const alreadyEnrolledIds = alreadyEnrolled.map(e => e.courseId);
+    const toEnroll = courses.filter(c => !alreadyEnrolledIds.includes(c.id));
+    if (toEnroll.length === 0) {
+      throw new ConflictException('Student is already enrolled in all selected courses');
+    }
+    // Split free and paid courses
+    const freeCourses = toEnroll.filter(c => c.isFree);
+    const paidCourses = toEnroll.filter(c => !c.isFree);
+    // Enroll in free courses immediately (commit outside transaction)
+    for (const course of freeCourses) {
+      await this.enrollmentModel.create({ userId, courseId: course.id } as any);
+      await course.increment('enrollmentCount');
+    }
+    // If there are paid courses, check for existing pending payment before initiating new one
+    if (paidCourses.length > 0) {
+      // Check for existing pending payment for this user and these paid courses
+      const payment = await this.paymentsService.initiatePayment({
+        userId,
+        courseIds: paidCourses.map(c => c.id),
+        amount: paidCourses.reduce((sum, c) => sum + parseFloat(c.price as any), 0),
+      });
+      // Always throw 402 to indicate payment required, even if payment is reused
+      throw new HttpException({
+        paymentRequired: true,
+        payment,
+      }, 402);
+    }
+    // If only free courses, return success
+    return { status: 'success', enrolled: freeCourses.map(c => c.id) };
   }
 }

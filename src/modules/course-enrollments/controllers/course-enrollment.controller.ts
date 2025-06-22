@@ -148,4 +148,37 @@ export class CourseEnrollmentController {
   ) {
     return this.enrollmentService.update(id, updateDto);
   }
+
+  @Post('bulk/:courseIds')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  @ApiOperation({ summary: 'Bulk enroll a student in multiple courses' })
+  @ApiParam({
+    name: 'courseIds',
+    description: 'Comma-separated UUIDs of courses to enroll in',
+    example: 'id1,id2,id3',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Student successfully enrolled in all free courses, or payment required for paid courses',
+  })
+  @ApiResponse({ status: 404, description: 'One or more courses not found' })
+  @ApiResponse({ status: 409, description: 'Student is already enrolled in all selected courses' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized access' })
+  @ApiForbiddenResponse({ description: 'Forbidden: Only students can enroll' })
+  async bulkEnroll(
+    @Param('courseIds') courseIdsParam: string,
+    @Req() req: RequestWithUser,
+  ): Promise<any> {
+    const userId = req.user.userId;
+    const courseIds = courseIdsParam.split(',').map(id => id.trim());
+    try {
+      return await this.enrollmentService.bulkEnroll(userId, courseIds);
+    } catch (err) {
+      if (err instanceof HttpException && err.getStatus() === 402) {
+        return err.getResponse();
+      }
+      throw err;
+    }
+  }
 }

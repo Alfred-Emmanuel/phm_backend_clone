@@ -13,17 +13,17 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('initiate')
-  @ApiOperation({ summary: 'Initiate a payment for course enrollment' })
+  @ApiOperation({ summary: 'Initiate a payment for course enrollment(s)' })
   @ApiBody({
     type: InitiatePaymentDto,
-    description: 'Payload to initiate a payment',
+    description: 'Payload to initiate a payment for one or more courses',
     examples: {
       valid: {
         summary: 'Valid Request',
         value: {
           userId: '123e4567-e89b-12d3-a456-426614174000',
-          courseId: '987e6543-e21c-65d4-b789-123456789abc',
-          amount: 5000,
+          courseIds: ['987e6543-e21c-65d4-b789-123456789abc', '123e4567-e89b-12d3-a456-426614174001'],
+          amount: 10000,
         },
       },
     },

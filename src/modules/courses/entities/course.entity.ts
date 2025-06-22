@@ -64,9 +64,18 @@ export class Course extends Model<Course> {
   declare categories: Category[];
 
   @Column({
-    type: DataType.NUMBER,
+    type: DataType.DECIMAL(10, 2),
     allowNull: false,
     defaultValue: 0.00,
+    get() {
+      // Always return as number
+      const value = this.getDataValue('price');
+      return value === null ? 0 : parseFloat(value);
+    },
+    set(value: number | string) {
+      // Always store as string for DECIMAL, but accept number
+      this.setDataValue('price', value === null ? '0.00' : value.toString());
+    },
   })
   declare price: number;
 

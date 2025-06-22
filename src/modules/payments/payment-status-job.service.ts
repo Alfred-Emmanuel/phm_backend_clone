@@ -23,6 +23,10 @@ export class PaymentStatusJobService {
       where: { status: 'pending' },
     });
     for (const payment of pendingPayments) {
+      if (!payment.reference) {
+        this.logger.warn(`Skipping payment with null reference (id: ${payment.id})`);
+        continue;
+      }
       try {
         const paystackSecret = config.payments.PAYSTACK_SECRET_KEY;
         const response = await axios.get(
@@ -34,9 +38,13 @@ export class PaymentStatusJobService {
           if (payment.status !== 'paid') {
             payment.status = 'paid';
             await payment.save();
-            const alreadyEnrolled = await this.courseEnrollmentService.isUserEnrolled(payment.userId, payment.courseId);
-            if (!alreadyEnrolled) {
-              await this.courseEnrollmentService.enrollAfterPayment(payment.userId, payment.courseId);
+            // Enroll user in all courses linked to this payment
+            await payment.reload({ include: ['paymentCourses'] });
+            for (const pc of payment.paymentCourses) {
+              const alreadyEnrolled = await this.courseEnrollmentService.isUserEnrolled(payment.userId, pc.courseId);
+              if (!alreadyEnrolled) {
+                await this.courseEnrollmentService.enrollAfterPayment(payment.userId, pc.courseId);
+              }
             }
           }
         } else if (status === 'failed' || status === 'abandoned') {

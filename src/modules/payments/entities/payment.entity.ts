@@ -5,7 +5,9 @@ import {
   DataType,
   CreatedAt,
   UpdatedAt,
+  HasMany,
 } from 'sequelize-typescript';
+import { PaymentCourse } from './payment-course.entity';
 
 @Table({
   tableName: 'payments',
@@ -27,13 +29,6 @@ export class Payment extends Model<Payment> {
     field: 'user_id',
   })
   declare userId: string;
-
-  @Column({
-    type: DataType.UUID,
-    allowNull: false,
-    field: 'course_id',
-  })
-  declare courseId: string;
 
   @Column({
     type: DataType.INTEGER,
@@ -78,4 +73,7 @@ export class Payment extends Model<Payment> {
   @UpdatedAt
   @Column({ field: 'updated_at' })
   declare updatedAt: Date;
+
+  @HasMany(() => PaymentCourse, { as: 'paymentCourses', foreignKey: 'paymentId' })
+  paymentCourses: PaymentCourse[];
 }
