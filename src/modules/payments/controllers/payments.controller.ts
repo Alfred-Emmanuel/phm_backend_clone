@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, Query, Headers, Req } from '@nestjs/common';
 import { PaymentsService } from '../services/payments.service';
 import { InitiatePaymentDto } from '../dto/initiate-payment.dto';
-import { VerifyPaymentDto } from '../dto/verify-payment.dto';
+import config from 'src/config/config';
 import { Request } from 'express';
 import { PaystackWebhookEvent } from '../dto/paystack-webhook.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
@@ -47,7 +47,7 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Paystack webhook endpoint (called by Paystack)' })
   @ApiResponse({ status: 200, description: 'Webhook processed' })
   async handleWebhook(@Req() req: Request, @Headers('x-paystack-signature') signature: string) {
-    const secret = process.env.PAYSTACK_SECRET_KEY;
+    const secret = config.payments.PAYSTACK_SECRET_KEY;
     const crypto = require('crypto');
     const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
     if (hash !== signature) {

@@ -5,7 +5,7 @@ import { UserService } from '../../users/services/user.service';
 import { CourseEnrollmentService } from '../../course-enrollments/services/course-enrollment.service';
 import { Payment } from '../entities/payment.entity';
 import { InitiatePaymentDto } from '../dto/initiate-payment.dto';
-import { VerifyPaymentDto } from '../dto/verify-payment.dto';
+import config from 'src/config/config';
 
 @Injectable()
 export class PaymentsService {
@@ -49,7 +49,7 @@ export class PaymentsService {
     } as any);
 
     // Call Paystack initialize
-    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    const paystackSecret = config.payments.PAYSTACK_SECRET_KEY;
     const response = await axios.post(
       'https://api.paystack.co/transaction/initialize',
       {
@@ -79,7 +79,7 @@ export class PaymentsService {
       throw new HttpException('Payment not found', HttpStatus.NOT_FOUND);
     }
     try {
-      const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+      const paystackSecret = config.payments.PAYSTACK_SECRET_KEY;
       const response = await axios.get(
         `https://api.paystack.co/transaction/verify/${reference}`,
         {

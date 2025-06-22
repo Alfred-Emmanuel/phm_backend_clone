@@ -49,6 +49,10 @@ const config = Object.freeze({
     password: process.env.EMAIL_PASSWORD as string,
     from: process.env.EMAIL_FROM as string,
   },
+  payments: {
+    PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_SECRET_KEY as string,
+    PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY as string,
+  },
   storage: {
     cloudinary: {
       CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
