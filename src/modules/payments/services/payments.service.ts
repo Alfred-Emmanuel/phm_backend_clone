@@ -30,8 +30,14 @@ export class PaymentsService {
         status: 'pending',
       },
     });
+    // Only reuse if valid
     if (payment) {
-      return { authorization_url: payment.authorizationUrl, reference: payment.reference };
+      if (payment.authorizationUrl && payment.reference) {
+        return { authorization_url: payment.authorizationUrl, reference: payment.reference };
+      } else {
+        // Remove invalid pending payment
+        await payment.destroy();
+      }
     }
 
     // Create payment record
