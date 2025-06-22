@@ -1,7 +1,9 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     // Ensure pgcrypto extension is enabled for gen_random_uuid()
-    await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
+    await queryInterface.sequelize.query(
+      'CREATE EXTENSION IF NOT EXISTS "pgcrypto";',
+    );
 
     await queryInterface.createTable('quizzes', {
       id: {

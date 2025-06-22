@@ -34,8 +34,11 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/sequelize": "^11.0.0",
     "@nestjs/swagger": "^11.1.1",
+    "@nestjs/typeorm": "^11.0.0",
+    "@types/axios": "^0.14.4",
     "@types/multer": "^1.4.12",
     "@types/nodemailer": "^6.4.17",
+    "axios": "^1.10.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -51,7 +54,8 @@
     "sequelize": "^6.37.6",
     "sequelize-cli": "^6.6.2",
     "sequelize-typescript": "^2.1.6",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.24"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

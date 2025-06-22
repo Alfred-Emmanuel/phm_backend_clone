@@ -7,7 +7,8 @@ import {
   UseGuards,
   Patch,
   ParseUUIDPipe,
-  Req
+  Req,
+  HttpException
 } from '@nestjs/common';
 import { CourseEnrollmentService } from '../services/course-enrollment.service';
 import { CreateEnrollmentDto } from '../dto/create-enrollment.dto';
@@ -33,18 +34,6 @@ export class CourseEnrollmentController {
     description: 'UUID of the course to enroll in',
     example: '987e6543-e21c-65d4-b789-123456789abc',
   })
-  @ApiBody({
-    type: CreateEnrollmentDto,
-    description: 'Student enrollment payload (userId required in body)',
-    examples: {
-      valid: {
-        summary: 'Valid Request',
-        value: {
-          userId: '123e4567-e89b-12d3-a456-426614174000',
-        },
-      },
-    },
-  })
   @ApiResponse({
     status: 201,
     description: 'Student successfully enrolled',
@@ -61,12 +50,19 @@ export class CourseEnrollmentController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized access' })
   @ApiForbiddenResponse({ description: 'Forbidden: Only students can enroll' })
   async create(
-    @Param('courseId', new ParseUUIDPipe()) courseId: string, 
-    @Body() createEnrollmentDto: Omit<CreateEnrollmentDto, 'courseId'>,
+    @Param('courseId', new ParseUUIDPipe()) courseId: string,
     @Req() req: RequestWithUser,
-  ): Promise<CourseEnrollment> {
+  ): Promise<any> {
     const userId = req.user.userId;
-    return this.enrollmentService.create({...createEnrollmentDto, courseId, userId});
+    try {
+      return await this.enrollmentService.create({ courseId, userId });
+    } catch (err) {
+      if (err instanceof HttpException && err.getStatus() === 402) {
+        // Return payment required response
+        return err.getResponse();
+      }
+      throw err;
+    }
   }
 
   @Get(':id')
