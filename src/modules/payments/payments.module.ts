@@ -6,6 +6,7 @@ import { Payment } from './entities/payment.entity';
 import { UserModule } from '../users/user.module';
 import { CourseModule } from '../courses/course.module';
 import { CourseEnrollmentModule } from '../course-enrollments/course-enrollment.module';
+import { PaymentStatusJobService } from './payment-status-job.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { CourseEnrollmentModule } from '../course-enrollments/course-enrollment.
     forwardRef(() => CourseEnrollmentModule),
   ],
   controllers: [PaymentsController],
-  providers: [PaymentsService],
+  providers: [PaymentsService, PaymentStatusJobService],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

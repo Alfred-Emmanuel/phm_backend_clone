@@ -18,6 +18,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { QuizzesModule } from './modules/quizzes/quizzes.module';
     AdminModule,
     CategoriesModule,
     QuizzesModule,
+    ScheduleModule.forRoot(),
   ],
   providers: [JwtStrategy, TokenService],
 })
