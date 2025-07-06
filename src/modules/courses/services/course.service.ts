@@ -164,7 +164,7 @@ export class CourseService {
         {
           model: User,
           as: 'instructor',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
+          attributes: ['id', 'firstName', 'lastName', 'email', 'userImage'],
         },
         {
           model: Category,
