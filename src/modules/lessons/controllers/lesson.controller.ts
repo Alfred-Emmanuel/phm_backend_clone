@@ -62,13 +62,13 @@ export class LessonController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async findAll(): Promise<Lesson[]> {
     return this.lessonService.findAll();
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Lesson> {
     return this.lessonService.findOne(id);
   }
