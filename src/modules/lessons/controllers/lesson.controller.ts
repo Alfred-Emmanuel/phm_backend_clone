@@ -239,11 +239,15 @@ export class LessonController {
   }
 
   @Get('course/:courseId/grouped')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get lessons grouped by section title for a course' })
   @ApiResponse({ status: 200, description: 'Lessons grouped by section', type: Object })
-  async findByCourseGrouped(@Param('courseId', new ParseUUIDPipe()) courseId: string) {
-    return this.lessonService.findByCourseGrouped(courseId);
+  async findByCourseGrouped(
+    @Param('courseId', new ParseUUIDPipe()) courseId: string,
+    @Request() req: any
+  ) {
+    // Pass user if present, else undefined
+    const user = req.user ? req.user : undefined;
+    return this.lessonService.findByCourseGrouped(courseId, user);
   }
 
   @Get('course/:courseId/sections')

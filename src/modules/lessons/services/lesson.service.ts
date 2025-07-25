@@ -267,17 +267,30 @@ export class LessonService {
   /**
    * Returns lessons grouped by sectionTitle for a course
    */
-  async findByCourseGrouped(courseId: string): Promise<{ sectionTitle: string, lessons: Lesson[] }[]> {
+  async findByCourseGrouped(courseId: string, user?: any): Promise<{ sectionTitle: string, lessons: any[] }[]> {
     const lessons = await this.lessonModel.findAll({
       where: { courseId },
       order: [['position', 'ASC']],
     });
+    let isEnrolled = false;
+    if (user && user.userId) {
+      isEnrolled = await this.enrollmentService.isUserEnrolled(user.userId, courseId);
+    }
     // Group by sectionTitle
-    const grouped: Record<string, Lesson[]> = {};
+    const grouped: Record<string, any[]> = {};
     for (const lesson of lessons) {
       const section = lesson.sectionTitle || 'Uncategorized';
       if (!grouped[section]) grouped[section] = [];
-      grouped[section].push(lesson);
+      if (isEnrolled) {
+        grouped[section].push(lesson);
+      } else {
+        grouped[section].push({
+          id: lesson.id,
+          title: lesson.title,
+          position: lesson.position,
+          sectionTitle: lesson.sectionTitle,
+        });
+      }
     }
     return Object.entries(grouped).map(([sectionTitle, lessons]) => ({ sectionTitle, lessons }));
   }
